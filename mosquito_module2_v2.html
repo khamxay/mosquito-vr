@@ -1,0 +1,802 @@
+<!DOCTYPE html>
+<html lang="lo">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>ໂມດູນ 2: ນັກປາບຍຸງລາຍ - 3D Interactive</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/PointerLockControls.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/webxr/VRButton.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; touch-action: none; }
+        body { overflow: hidden; font-family: 'Noto Sans Lao', 'Phetsarath OT', sans-serif; background: #000; }
+        #game-container { position: relative; width: 100vw; height: 100vh; }
+        canvas { display: block; }
+
+        /* START SCREEN */
+        #start-screen {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(180deg, #0d4a1c 0%, #051f0e 100%);
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            z-index: 1000; color: white; text-align: center; padding: 20px;
+        }
+        #start-screen h1 { font-size: 2.2em; margin-bottom: 10px; color: #90ee90; text-shadow: 2px 2px 4px rgba(0,0,0,0.8); }
+        #start-screen h2 { font-size: 1.3em; margin-bottom: 25px; color: #ffd700; }
+        .start-btn {
+            padding: 18px 50px; font-size: 1.4em; background: linear-gradient(135deg, #ff6b35, #ff8c5a);
+            color: white; border: none; border-radius: 12px; cursor: pointer;
+            box-shadow: 0 4px 15px rgba(255,107,53,0.4); font-family: inherit;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .start-btn:hover, .start-btn:active { transform: scale(1.05); box-shadow: 0 6px 20px rgba(255,107,53,0.6); }
+        .instructions {
+            margin-top: 25px; background: rgba(0,0,0,0.5); padding: 15px 25px;
+            border-radius: 10px; max-width: 500px; line-height: 1.8; font-size: 0.95em;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        .instructions kbd {
+            background: rgba(255,255,255,0.2); padding: 2px 8px; border-radius: 4px;
+            font-family: monospace; color: #ffd700; border: 1px solid rgba(255,255,255,0.3);
+        }
+
+        /* HUD */
+        #hud { position: absolute; top: 0; left: 0; width: 100%; padding: 15px; display: none; pointer-events: none; z-index: 100; }
+        .hud-left { float: left; }
+        .hud-right { float: right; text-align: right; }
+        .hud-box {
+            background: rgba(0,0,0,0.75); color: white; padding: 12px 18px;
+            border-radius: 10px; border: 2px solid #4CAF50; display: inline-block;
+            margin-bottom: 8px; pointer-events: auto;
+        }
+        .hud-title { font-size: 0.85em; color: #90ee90; margin-bottom: 4px; }
+        .hud-value { font-size: 1.3em; font-weight: bold; }
+        .health-bar { width: 180px; height: 16px; background: #333; border-radius: 8px; overflow: hidden; margin-top: 4px; }
+        .health-fill { height: 100%; background: linear-gradient(90deg, #ff4444, #ffaa00, #44ff44); width: 100%; transition: width 0.3s; }
+
+        /* SCENE INDICATOR */
+        #scene-indicator {
+            position: absolute; top: 15px; left: 50%; transform: translateX(-50%);
+            background: rgba(0,0,0,0.85); color: #ffd700; padding: 10px 25px;
+            border-radius: 20px; font-size: 1.1em; border: 2px solid #ffd700;
+            display: none; z-index: 101; text-align: center; white-space: nowrap;
+        }
+
+        /* INTERACTION PROMPT */
+        #interaction-prompt {
+            position: absolute; bottom: 140px; left: 50%; transform: translateX(-50%);
+            background: rgba(0,0,0,0.85); color: white; padding: 12px 20px;
+            border-radius: 10px; font-size: 1em; display: none; text-align: center;
+            border: 2px solid #4CAF50; z-index: 102; max-width: 90vw;
+        }
+        #interaction-prompt .key { color: #ffd700; font-weight: bold; font-size: 1.1em; }
+
+        /* TOOLS PANEL */
+        #tools-panel {
+            position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
+            display: none; gap: 8px; background: rgba(0,0,0,0.85); padding: 10px;
+            border-radius: 12px; border: 2px solid #4CAF50; z-index: 103;
+            flex-wrap: wrap; justify-content: center; max-width: 95vw;
+        }
+        .tool-btn {
+            padding: 10px 14px; background: #2e7d32; color: white;
+            border: 2px solid #4CAF50; border-radius: 8px; cursor: pointer;
+            font-family: inherit; font-size: 0.85em; transition: all 0.2s; pointer-events: auto;
+            white-space: nowrap;
+        }
+        .tool-btn:hover { background: #4CAF50; }
+        .tool-btn.active { background: #ff6b35; border-color: #ff8c5a; transform: translateY(-2px); }
+
+        /* MESSAGE OVERLAY */
+        #message-overlay {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.92); color: white; padding: 25px 35px;
+            border-radius: 15px; font-size: 1.15em; display: none; text-align: center;
+            border: 3px solid #ffd700; max-width: 85vw; z-index: 200; line-height: 1.6;
+        }
+        #message-overlay .msg-btn {
+            margin-top: 15px; padding: 8px 20px; background: #4CAF50; color: white;
+            border: none; border-radius: 6px; cursor: pointer; font-family: inherit; pointer-events: auto;
+        }
+
+        /* GAME OVER */
+        #game-over {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.92); display: none; flex-direction: column;
+            align-items: center; justify-content: center; z-index: 300; color: white; text-align: center;
+            padding: 20px;
+        }
+        #game-over h1 { font-size: 2.5em; margin-bottom: 15px; }
+        #game-over p { font-size: 1.2em; margin-bottom: 20px; max-width: 500px; line-height: 1.6; }
+        .restart-btn {
+            padding: 15px 40px; font-size: 1.2em; background: #ff6b35; color: white;
+            border: none; border-radius: 10px; cursor: pointer; font-family: inherit;
+        }
+
+        /* CROSSHAIR */
+        #crosshair {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            width: 24px; height: 24px; pointer-events: none; z-index: 50; display: none;
+        }
+        #crosshair::before, #crosshair::after {
+            content: ''; position: absolute; background: rgba(255,255,255,0.9);
+        }
+        #crosshair::before { top: 11px; left: 0; width: 24px; height: 2px; }
+        #crosshair::after { top: 0; left: 11px; width: 2px; height: 24px; }
+
+        /* VR BUTTON */
+        #vr-btn-container { position: absolute; bottom: 20px; right: 20px; z-index: 150; }
+
+        /* TOUCH CONTROLS (Mobile/Quest) */
+        #touch-controls { position: absolute; bottom: 20px; left: 20px; z-index: 150; display: none; }
+        .touch-btn {
+            width: 60px; height: 60px; background: rgba(255,255,255,0.25);
+            border: 2px solid rgba(255,255,255,0.5); border-radius: 50%;
+            color: white; font-size: 1.5em; display: flex; align-items: center; justify-content: center;
+            margin: 5px; pointer-events: auto; user-select: none; -webkit-user-select: none;
+        }
+        .touch-btn:active { background: rgba(255,255,255,0.5); }
+        .touch-row { display: flex; justify-content: center; }
+
+        /* Action Buttons for Touch */
+        #touch-actions { position: absolute; bottom: 20px; right: 100px; z-index: 150; display: none; }
+        .action-btn {
+            width: 70px; height: 70px; background: rgba(255,107,53,0.8);
+            border: 2px solid white; border-radius: 50%; color: white;
+            font-size: 0.9em; display: flex; align-items: center; justify-content: center;
+            pointer-events: auto; margin: 5px; font-family: inherit;
+        }
+        .action-btn:active { background: rgba(255,140,90,1); }
+
+        /* Loading */
+        #loading {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: #000; color: #4CAF50; display: flex;
+            align-items: center; justify-content: center; z-index: 9999; font-size: 1.3em;
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <div id="loading">⏳ ກຳລັງໂຫລດເກມ...</div>
+
+        <div id="start-screen">
+            <h1>🛡️ ໂມດູນ 2: ນັກປາບຍຸງລາຍ</h1>
+            <h2>ການປ້ອງກັນ ແລະ ການປະຕິບັດ 5 ປ</h2>
+            <div class="instructions">
+                <strong>🎯 ເປົ້າໝາຍ:</strong> ປົກປ້ອງຕົວເອງຈາກຝູງຍຸງລາຍ<br>
+                <strong>⚠️ ລະວັງ:</strong> ຖືກຍຸງກັດ 10 ຄັ້ງ = Game Over!<br><br>
+                <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> = ເຄື່ອນທີ່ &nbsp;|&nbsp; <kbd>Mouse</kbd> = ເບິ່ງຮອບ<br>
+                <kbd>E</kbd> = ໃຊ້ງານ/ປະຕິບັດການ &nbsp;|&nbsp; <kbd>1-5</kbd> = ເລືອກ 5 ປ<br><br>
+                <span style="color:#ffd700">📱 ໃນ Quest 3: ໃຊ້ Touch Joystick ລຸ່ມຊ້າຍ ແລະ ປຸ່ມກະທຳຂວາ</span>
+            </div>
+            <button class="start-btn" id="start-btn">🎮 ເລີ່ມເກມ</button>
+            <div style="margin-top:15px;font-size:0.85em;color:#aaa;">
+                ເວີຊັນ VR-Ready | ເປີດໃນ Oculus Browser ແລ້ວກົດ Enter VR
+            </div>
+        </div>
+
+        <div id="hud">
+            <div class="hud-left">
+                <div class="hud-box">
+                    <div class="hud-title">❤️ ພະລັງງານ / ຍຸງກັດ</div>
+                    <div class="health-bar"><div class="health-fill" id="health-fill"></div></div>
+                    <div style="margin-top:4px;font-size:0.9em;"><span id="bite-count">0</span> / 10 ຄັ້ງ</div>
+                </div>
+            </div>
+            <div class="hud-right">
+                <div class="hud-box">
+                    <div class="hud-title">🦟 ລະດັບຍຸງ</div>
+                    <div class="hud-value" id="mosquito-level">ສູງ</div>
+                </div>
+                <div class="hud-box">
+                    <div class="hud-title">📋 ຄວາມຄືບຫນ້າ</div>
+                    <div class="hud-value"><span id="progress">0</span>%</div>
+                    <div style="font-size:0.75em;margin-top:3px;">ແຫຼ່ງເພາະພັນ: <span id="sources-found">0</span>/<span id="sources-total">8</span></div>
+                </div>
+            </div>
+        </div>
+
+        <div id="scene-indicator">ສາກທີ 1: ການສຳຫຼວດ</div>
+
+        <div id="crosshair"></div>
+
+        <div id="interaction-prompt">
+            <span id="prompt-text">ກົດ <span class="key">E</span> ເພື່ອກວດສອບ</span>
+        </div>
+
+        <div id="tools-panel">
+            <button class="tool-btn" data-tool="pid">1. ປິດ</button>
+            <button class="tool-btn" data-tool="pian">2. ປ່ຽນ</button>
+            <button class="tool-btn" data-tool="poy">3. ປ່ອຍ</button>
+            <button class="tool-btn" data-tool="pupung">4. ປັບປຸງ</button>
+            <button class="tool-btn" data-tool="patibat">5. ປະຕິບັດ</button>
+        </div>
+
+        <div id="message-overlay">
+            <div id="message-text"></div>
+            <button class="msg-btn" id="msg-ok" style="display:none;">ຕົກລົງ</button>
+        </div>
+
+        <div id="game-over">
+            <h1 id="go-title">💀 Game Over</h1>
+            <p id="go-reason">ທ່ານຖືກຍຸງກັດຄົບ 10 ຄັ້ງ!</p>
+            <p>คะแนนรวม: <span id="final-score">0</span></p>
+            <button class="restart-btn" onclick="location.reload()">🔁 ເລີ່ມໃໝ່</button>
+        </div>
+
+        <!-- Touch Controls -->
+        <div id="touch-controls">
+            <div class="touch-row">
+                <div class="touch-btn" data-dir="forward">▲</div>
+            </div>
+            <div class="touch-row">
+                <div class="touch-btn" data-dir="left">◀</div>
+                <div class="touch-btn" data-dir="backward">▼</div>
+                <div class="touch-btn" data-dir="right">▶</div>
+            </div>
+        </div>
+        <div id="touch-actions">
+            <div class="action-btn" id="btn-interact">ໃຊ້<br>E</div>
+            <div class="action-btn" id="btn-jump" style="display:none;">Jump</div>
+        </div>
+
+        <div id="vr-btn-container"></div>
+    </div>
+
+    <script>
+        // ==================== STATE ====================
+        const state = {
+            health: 100, bites: 0, maxBites: 10,
+            scene: 1, sourcesFixed: 0, totalSources: 8,
+            mosquitoCount: 15, currentTool: null,
+            isIndoors: false, wearingLongSleeve: false,
+            acOn: false, fanOn: false, gameActive: false,
+            score: 0, isMobile: false
+        };
+
+        let scene3d, camera, renderer, controls;
+        let raycaster, mosquitoes = [], breedingSources = [], interactables = [];
+        let moveForward=false, moveBackward=false, moveLeft=false, moveRight=false;
+        let prevTime = performance.now();
+        let velocity = new THREE.Vector3();
+        let direction = new THREE.Vector3();
+
+        // ==================== INIT ====================
+        function init() {
+            state.isMobile = /Android|webOS|iPhone|iPad|iPod|Oculus|Quest/i.test(navigator.userAgent);
+
+            scene3d = new THREE.Scene();
+            scene3d.background = new THREE.Color(0x87CEEB);
+            scene3d.fog = new THREE.Fog(0x87CEEB, 10, 120);
+
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
+            camera.position.set(0, 1.6, 12);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.shadowMap.enabled = true;
+            renderer.xr.enabled = true;
+            document.getElementById('game-container').appendChild(renderer.domElement);
+
+            // VR Button
+            try {
+                const vrBtn = VRButton.createButton(renderer);
+                document.getElementById('vr-btn-container').appendChild(vrBtn);
+            } catch(e) { console.log('VR not available'); }
+
+            // Controls
+            controls = new THREE.PointerLockControls(camera, document.body);
+            controls.addEventListener('unlock', () => {
+                if(state.gameActive) document.getElementById('start-screen').style.display = 'flex';
+            });
+
+            // Lights
+            const ambient = new THREE.AmbientLight(0xffffff, 0.6);
+            scene3d.add(ambient);
+            const dir = new THREE.DirectionalLight(0xffffff, 0.8);
+            dir.position.set(50,100,50); dir.castShadow = true;
+            dir.shadow.camera.left=-60; dir.shadow.camera.right=60;
+            dir.shadow.camera.top=60; dir.shadow.camera.bottom=-60;
+            scene3d.add(dir);
+
+            raycaster = new THREE.Raycaster();
+
+            buildWorld();
+
+            // Events
+            document.addEventListener('keydown', onKeyDown);
+            document.addEventListener('keyup', onKeyUp);
+            window.addEventListener('resize', onResize);
+
+            // Touch events
+            setupTouchControls();
+
+            // Tool buttons
+            document.querySelectorAll('.tool-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    selectTool(btn.dataset.tool);
+                });
+            });
+
+            document.getElementById('start-btn').addEventListener('click', startGame);
+            document.getElementById('msg-ok').addEventListener('click', () => {
+                document.getElementById('message-overlay').style.display = 'none';
+            });
+
+            document.getElementById('loading').style.display = 'none';
+            renderer.setAnimationLoop(animate);
+        }
+
+        // ==================== WORLD ====================
+        function buildWorld() {
+            // Ground
+            const ground = new THREE.Mesh(
+                new THREE.PlaneGeometry(200,200),
+                new THREE.MeshLambertMaterial({color:0x3a7d3a})
+            );
+            ground.rotation.x = -Math.PI/2; ground.receiveShadow = true;
+            scene3d.add(ground);
+
+            // Yard
+            const fenceMat = new THREE.MeshLambertMaterial({color:0x8B4513});
+            [[0,1,-100,0,0,0], [0,1,100,0,0,0], [-100,1,0,0,Math.PI/2,0], [100,1,0,0,Math.PI/2,0]].forEach(f => {
+                const w = new THREE.Mesh(new THREE.BoxGeometry(200,2,1), fenceMat);
+                w.position.set(f[0],f[1],f[2]); w.rotation.set(f[3],f[4],f[5]);
+                w.castShadow = true; scene3d.add(w);
+            });
+
+            // House
+            buildHouse();
+            // Sources
+            buildSources();
+            // Trees
+            [[30,0,30],[-30,0,25],[35,0,-25],[-35,0,-30],[0,0,40]].forEach(p => {
+                const t = new THREE.Mesh(new THREE.CylinderGeometry(0.5,0.7,3), new THREE.MeshLambertMaterial({color:0x8B4513}));
+                t.position.set(p[0],1.5,p[2]);
+                const l = new THREE.Mesh(new THREE.SphereGeometry(3,8,8), new THREE.MeshLambertMaterial({color:0x228B22}));
+                l.position.set(p[0],4,p[2]);
+                scene3d.add(t); scene3d.add(l);
+            });
+
+            spawnMosquitoes();
+        }
+
+        function buildHouse() {
+            const g = new THREE.Group();
+            // Floor
+            const fl = new THREE.Mesh(new THREE.BoxGeometry(20,0.5,15), new THREE.MeshLambertMaterial({color:0x8B7355}));
+            fl.position.set(0,0.25,0); fl.receiveShadow = true; g.add(fl);
+
+            // Walls
+            const wm = new THREE.MeshLambertMaterial({color:0xF5F5DC});
+            [[20,4,0.5,0,2.25,-7.5],[0.5,4,15,-10,2.25,0],[0.5,4,15,10,2.25,0],[20,4,0.5,0,2.25,7.5]].forEach(w => {
+                const wall = new THREE.Mesh(new THREE.BoxGeometry(w[0],w[1],w[2]), wm);
+                wall.position.set(w[3],w[4],w[5]); wall.castShadow = true; g.add(wall);
+            });
+
+            // Door
+            const door = new THREE.Mesh(new THREE.BoxGeometry(3,3.5,0.2), new THREE.MeshLambertMaterial({color:0x654321}));
+            door.position.set(0,1.75,7.4);
+            door.userData = {type:'door',name:'ປະຕູ',closed:false,interactable:true}; g.add(door); interactables.push(door);
+
+            // Windows
+            [[-5,2.5,7.4],[5,2.5,7.4],[-10,2.5,-3],[-10,2.5,3],[10,2.5,-3],[10,2.5,3]].forEach((p,i) => {
+                const win = new THREE.Mesh(new THREE.BoxGeometry(2,1.5,0.2), new THREE.MeshLambertMaterial({color:0x87CEEB,transparent:true,opacity:0.6}));
+                win.position.set(...p); win.userData={type:'window',name:'ປ່ອງຢ້ຽມ',id:i,closed:false,interactable:true}; g.add(win); interactables.push(win);
+            });
+
+            // Roof
+            const roof = new THREE.Mesh(new THREE.ConeGeometry(15,5,4), new THREE.MeshLambertMaterial({color:0x8B0000}));
+            roof.position.set(0,6,0); roof.rotation.y=Math.PI/4; roof.scale.set(1,0.5,1.5); roof.castShadow=true; g.add(roof);
+
+            // AC
+            const ac = new THREE.Mesh(new THREE.BoxGeometry(1.5,0.8,0.5), new THREE.MeshLambertMaterial({color:0xFFFFFF}));
+            ac.position.set(6,3.5,-7.2); ac.userData={type:'ac',name:'ແອ',on:false,interactable:true}; g.add(ac); interactables.push(ac);
+
+            // Fan
+            const fan = new THREE.Group();
+            fan.add(new THREE.Mesh(new THREE.CylinderGeometry(0.1,0.1,2), new THREE.MeshLambertMaterial({color:0x333})));
+            fan.children[0].position.y=1;
+            const fh = new THREE.Mesh(new THREE.BoxGeometry(1.5,1.5,0.3), new THREE.MeshLambertMaterial({color:0x4682B4}));
+            fh.position.y=2; fan.add(fh);
+            for(let i=0;i<3;i++){
+                const b=new THREE.Mesh(new THREE.BoxGeometry(0.2,1.2,0.05), new THREE.MeshLambertMaterial({color:0x87CEEB}));
+                b.position.y=2; b.rotation.z=(i*Math.PI*2)/3; b.userData.isBlade=true; fan.add(b);
+            }
+            fan.position.set(-6,0,0); fan.userData={type:'fan',name:'ພັດລົມ',on:false,interactable:true}; g.add(fan); interactables.push(fan);
+
+            // Bed
+            const bed = new THREE.Mesh(new THREE.BoxGeometry(3,0.8,5), new THREE.MeshLambertMaterial({color:0x4682B4}));
+            bed.position.set(-5,0.4,-2); bed.userData={type:'bed',name:'ຕຽງນອນ',interactable:true}; g.add(bed); interactables.push(bed);
+
+            // Wardrobe
+            const wd = new THREE.Mesh(new THREE.BoxGeometry(2,4,1), new THREE.MeshLambertMaterial({color:0x8B4513}));
+            wd.position.set(8,2,-5); wd.userData={type:'wardrobe',name:'ຕູ້ເສື້ອ',interactable:true}; g.add(wd); interactables.push(wd);
+
+            scene3d.add(g);
+        }
+
+        function buildSources() {
+            const data = [
+                {pos:[15,0.3,15],type:'bucket',name:'ຕຸ່ມນ້ຳ',tool:'pid',desc:'ປິດຝາຕຸ່ມໃຫ້ສນິດ'},
+                {pos:[-15,0.2,12],type:'tire',name:'ຢາງລົດເກົ່າ',tool:'poy',desc:'ຖິ້ມຢາງລົດໃສ່ບ່ອນຖິ້ມຂີ້ເຫຍື້ອ'},
+                {pos:[20,0.3,-10],type:'vase',name:'ແຈກັນນ້ຳ',tool:'pian',desc:'ປ່ຽນນ້ຳທຸກ 3 ມື້'},
+                {pos:[-20,0.2,-15],type:'tray',name:'ຖາດຮອງນ້ຳ',tool:'pid',desc:'ປິດຖາດຫຼືເທນ້ຳອອກ'},
+                {pos:[12,0.1,-20],type:'puddle',name:'ບ່ອນນ້ຳຂັງ',tool:'pupung',desc:'ປັບປຸງພື້ນທີ່ໃຫ້ລົດນ້ຳໄດ້'},
+                {pos:[-12,0.3,20],type:'tank',name:'ແທັງນ້ຳ',tool:'pid',desc:'ປິດຝາແທັງນ້ຳໃຫ້ສນິດ'},
+                {pos:[25,0.2,5],type:'bottle',name:'ຂວດນ້ຳເກົ່າ',tool:'poy',desc:'ຖິ້ມຂວດເກົ່າທີ່ມີນ້ຳຂັງ'},
+                {pos:[-25,0.3,8],type:'cooler',name:'ຖາດແອ',tool:'pian',desc:'ປ່ຽນນ້ຳຖາດແອທຸກອາທິດ'}
+            ];
+
+            data.forEach((d,i) => {
+                const g = new THREE.Group(); g.position.set(...d.pos);
+                let mesh;
+                switch(d.type){
+                    case 'bucket':
+                        mesh=new THREE.Mesh(new THREE.CylinderGeometry(0.8,0.6,1.2,16), new THREE.MeshLambertMaterial({color:0x4682B4}));
+                        mesh.position.y=0.6;
+                        const w=new THREE.Mesh(new THREE.CylinderGeometry(0.7,0.7,0.1,16), new THREE.MeshLambertMaterial({color:0x00CED1,transparent:true,opacity:0.8}));
+                        w.position.y=1.0; g.add(w);
+                        break;
+                    case 'tire':
+                        mesh=new THREE.Mesh(new THREE.TorusGeometry(0.8,0.3,8,20), new THREE.MeshLambertMaterial({color:0x333}));
+                        mesh.rotation.x=Math.PI/2; mesh.position.y=0.3; break;
+                    case 'vase':
+                        mesh=new THREE.Mesh(new THREE.CylinderGeometry(0.5,0.8,1.5,12), new THREE.MeshLambertMaterial({color:0xDDA0DD}));
+                        mesh.position.y=0.75; break;
+                    case 'tray':
+                        mesh=new THREE.Mesh(new THREE.BoxGeometry(2,0.2,2), new THREE.MeshLambertMaterial({color:0x8B4513}));
+                        mesh.position.y=0.1; break;
+                    case 'puddle':
+                        mesh=new THREE.Mesh(new THREE.CircleGeometry(1.5,32), new THREE.MeshLambertMaterial({color:0x4682B4,transparent:true,opacity:0.7}));
+                        mesh.rotation.x=-Math.PI/2; mesh.position.y=0.05; break;
+                    case 'tank':
+                        mesh=new THREE.Mesh(new THREE.BoxGeometry(2,2,2), new THREE.MeshLambertMaterial({color:0xFFF}));
+                        mesh.position.y=1; break;
+                    case 'bottle':
+                        mesh=new THREE.Mesh(new THREE.CylinderGeometry(0.3,0.3,1,12), new THREE.MeshLambertMaterial({color:0x228B22}));
+                        mesh.position.y=0.5; mesh.rotation.z=Math.PI/4; break;
+                    case 'cooler':
+                        mesh=new THREE.Mesh(new THREE.BoxGeometry(1.5,0.5,1.5), new THREE.MeshLambertMaterial({color:0xB0C4DE}));
+                        mesh.position.y=0.25; break;
+                }
+                if(mesh){mesh.castShadow=true; g.add(mesh);}
+
+                // Glow
+                const glow=new THREE.Mesh(new THREE.SphereGeometry(2,16,16), new THREE.MeshBasicMaterial({color:0xff4444,transparent:true,opacity:0.15,wireframe:true}));
+                glow.position.y=1; glow.userData.isGlow=true; g.add(glow);
+
+                g.userData={type:'breeding-source',id:i,name:d.name,tool:d.tool,desc:d.desc,fixed:false,interactable:true,glow:glow};
+                scene3d.add(g); breedingSources.push(g); interactables.push(g);
+            });
+            document.getElementById('sources-total').textContent=state.totalSources;
+        }
+
+        function spawnMosquitoes() {
+            for(let i=0;i<state.mosquitoCount;i++){
+                const m=new THREE.Group();
+                const body=new THREE.Mesh(new THREE.SphereGeometry(0.15,8,8), new THREE.MeshLambertMaterial({color:0x333}));
+                m.add(body);
+                const wingMat=new THREE.MeshBasicMaterial({color:0xCCC,transparent:true,opacity:0.6,side:THREE.DoubleSide});
+                const w1=new THREE.Mesh(new THREE.PlaneGeometry(0.3,0.15), wingMat);
+                w1.position.set(0.1,0.05,0); w1.rotation.y=0.3; m.add(w1);
+                const w2=new THREE.Mesh(new THREE.PlaneGeometry(0.3,0.15), wingMat);
+                w2.position.set(-0.1,0.05,0); w2.rotation.y=-0.3; m.add(w2);
+                const prob=new THREE.Mesh(new THREE.CylinderGeometry(0.02,0.01,0.2), new THREE.MeshBasicMaterial({color:0xf00}));
+                prob.position.set(0,0,0.15); prob.rotation.x=Math.PI/2; m.add(prob);
+
+                const a=Math.random()*Math.PI*2, r=20+Math.random()*30;
+                m.position.set(Math.cos(a)*r, 1+Math.random()*3, Math.sin(a)*r);
+                m.userData={velocity:new THREE.Vector3(),wingSpeed:0.3+Math.random()*0.2,attackCooldown:0,id:i};
+                scene3d.add(m); mosquitoes.push(m);
+            }
+        }
+
+        // ==================== GAME LOGIC ====================
+        function updateMosquitoes(delta) {
+            const pp=camera.position;
+            mosquitoes.forEach(m => {
+                const d=m.userData, dist=m.position.distanceTo(pp);
+                // Wings
+                m.children[1].rotation.z=Math.sin(Date.now()*0.02*d.wingSpeed)*0.5;
+                m.children[2].rotation.z=-Math.sin(Date.now()*0.02*d.wingSpeed)*0.5;
+
+                let speed=3;
+                if(state.isIndoors && state.fanOn){
+                    const fp=new THREE.Vector3(-6,2,0);
+                    if(m.position.distanceTo(fp)<8){
+                        const dir=m.position.clone().sub(fp).normalize();
+                        m.position.add(dir.multiplyScalar(delta*5)); speed=1;
+                    }
+                }
+                if(state.isIndoors && state.acOn) speed*=0.5;
+                if(state.wearingLongSleeve && Math.random()<0.7) speed*=0.3;
+
+                if(dist>30){
+                    const a=Math.random()*Math.PI*2;
+                    m.position.set(pp.x+Math.cos(a)*20, pp.y+Math.random()*2, pp.z+Math.sin(a)*20);
+                } else if(dist>2){
+                    const dir=pp.clone().sub(m.position).normalize();
+                    dir.x+=(Math.random()-0.5)*0.5; dir.y+=(Math.random()-0.5)*0.3; dir.z+=(Math.random()-0.5)*0.5;
+                    dir.normalize();
+                    m.position.add(dir.multiplyScalar(speed*delta));
+                    m.lookAt(pp);
+                } else {
+                    if(d.attackCooldown<=0){ takeBite(); d.attackCooldown=3; }
+                }
+                if(d.attackCooldown>0) d.attackCooldown-=delta;
+                if(m.position.y<0.5) m.position.y=0.5;
+                if(m.position.y>5) m.position.y=5;
+            });
+        }
+
+        function takeBite() {
+            state.bites++; state.health=Math.max(0,100-(state.bites*10));
+            document.getElementById('bite-count').textContent=state.bites;
+            document.getElementById('health-fill').style.width=state.health+'%';
+
+            const flash=document.createElement('div');
+            flash.style.cssText='position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(255,0,0,0.3);pointer-events:none;z-index:50;';
+            document.body.appendChild(flash); setTimeout(()=>flash.remove(),200);
+
+            showMessage('💢 ໂອຍ! ຍຸງກັດແລ້ວ! ('+state.bites+'/10)', 1500);
+            if(state.bites>=state.maxBites) gameOver('ທ່ານຖືກຍຸງກັດຄົບ 10 ຄັ້ງ! ໄດ້ຮັບເຊື້ອໄຂ້ເລືອດອອກ!');
+        }
+
+        function checkInteraction() {
+            raycaster.setFromCamera(new THREE.Vector2(0,0), camera);
+            const hits=raycaster.intersectObjects(interactables, true);
+            const prompt=document.getElementById('interaction-prompt');
+            const pText=document.getElementById('prompt-text');
+
+            if(hits.length>0 && hits[0].distance<5){
+                let obj=hits[0].object;
+                while(obj && !obj.userData.interactable && obj.parent) obj=obj.parent;
+                if(obj && obj.userData.interactable){
+                    prompt.style.display='block';
+                    const d=obj.userData; let action='ກວດສອບ';
+                    if(d.type==='breeding-source'){
+                        if(d.fixed){ action='ແກ້ໄຂແລ້ວ ✓'; prompt.style.opacity='0.5'; }
+                        else { action='ໃຊ້ 5 ປ ('+getToolName(d.tool)+')'; prompt.style.opacity='1'; }
+                    } else if(d.type==='door') action=d.closed?'ເປີດປະຕູ':'ປິດປະຕູ';
+                    else if(d.type==='window') action=d.closed?'ເປີດປ່ອງຢ້ຽມ':'ປິດປ່ອງຢ້ຽມ';
+                    else if(d.type==='ac') action=d.on?'ປິດແອ':'ເປີດແອ';
+                    else if(d.type==='fan') action=d.on?'ປິດພັດລົມ':'ເປີດພັດລົມ';
+                    else if(d.type==='bed') action='ນອນພັກຜ່ອນ';
+                    else if(d.type==='wardrobe') action=state.wearingLongSleeve?'ຖອດເສື້ອ':'ນຸ່ງເສື້ອແຂນຍາວ';
+                    pText.innerHTML=d.name+': ກົດ <span class="key">E</span> ເພື່ອ'+action;
+                    window.currentTarget=obj; return;
+                }
+            }
+            prompt.style.display='none'; window.currentTarget=null;
+        }
+
+        function getToolName(t){
+            return {pid:'ປິດ',pian:'ປ່ຽນ',poy:'ປ່ອຍ',pupung:'ປັບປຸງ',patibat:'ປະຕິບັດ'}[t]||t;
+        }
+
+        function interact() {
+            const obj=window.currentTarget; if(!obj) return;
+            const d=obj.userData;
+            switch(d.type){
+                case 'breeding-source':
+                    if(!d.fixed){
+                        if(state.currentTool===d.tool) fixSource(obj);
+                        else { selectTool(d.tool); showMessage('❌ ຜິດເຄື່ອງມື! ຕ້ອງໃຊ້: '+getToolName(d.tool)+'<br>"'+d.desc+'"', 3000); }
+                    }
+                    break;
+                case 'door':
+                    d.closed=!d.closed; obj.rotation.y=d.closed?Math.PI/2:0;
+                    showMessage(d.closed?'🚪 ປິດປະຕູແລ້ວ':'🚪 ເປີດປະຕູແລ້ວ',2000); checkSafeZone(); break;
+                case 'window':
+                    d.closed=!d.closed; obj.material.color.setHex(d.closed?0x654321:0x87CEEB);
+                    showMessage(d.closed?'🪟 ປິດປ່ອງຢ້ຽມ #'+(d.id+1)+' ແລ້ວ':'🪟 ເປີດປ່ອງຢ້ຽມ #'+(d.id+1)+' ແລ້ວ',2000); checkSafeZone(); break;
+                case 'ac':
+                    d.on=!d.on; obj.material.color.setHex(d.on?0x00FF00:0xFFFFFF); state.acOn=d.on;
+                    showMessage(d.on?'❄️ ເປີດແອແລ້ວ':'🔥 ປິດແອແລ້ວ',2000); break;
+                case 'fan':
+                    d.on=!d.on; state.fanOn=d.on;
+                    showMessage(d.on?'💨 ເປີດພັດລົມແລ້ວ':'🛑 ປິດພັດລົມແລ້ວ',2000); break;
+                case 'bed':
+                    if(state.bites>0){ state.bites=Math.max(0,state.bites-2); state.health=Math.min(100,100-(state.bites*10)); }
+                    document.getElementById('bite-count').textContent=state.bites;
+                    document.getElementById('health-fill').style.width=state.health+'%';
+                    showMessage('😴 ພັກຜ່ອນແລ້ວ! ພະລັງງານຟື້ນຟູ!<br>ຍຸງກັດເຫຼືອ: '+state.bites+' ຄັ້ງ',3000); break;
+                case 'wardrobe':
+                    state.wearingLongSleeve=!state.wearingLongSleeve;
+                    showMessage(state.wearingLongSleeve?'👕 ນຸ່ງເສື້ອແຂນຍາວແລ້ວ':'👔 ຖອດເສື້ອແຂນຍາວແລ້ວ',2000); break;
+            }
+            updateHUD();
+        }
+
+        function fixSource(source){
+            const d=source.userData; d.fixed=true;
+            d.glow.material.color.setHex(0x00ff00); d.glow.material.opacity=0.3;
+            source.children.forEach(c=>{ if(c.userData.isGlow)return; if(c.material&&c.material.transparent&&c.material.color.getHex()===0x00CED1)c.visible=false; });
+            state.sourcesFixed++; state.score+=100;
+            showMessage('✅ ແກ້ໄຂ "'+d.name+'" ແລ້ວ!<br>ໃຊ້: '+getToolName(d.tool),2500);
+            if(state.sourcesFixed>=state.totalSources) setTimeout(()=>advanceScene(3),2000);
+            updateHUD();
+        }
+
+        function selectTool(tool){
+            state.currentTool=tool;
+            document.querySelectorAll('.tool-btn').forEach(b=>{
+                b.classList.toggle('active', b.dataset.tool===tool);
+            });
+        }
+
+        function checkSafeZone(){
+            const p=camera.position;
+            state.isIndoors=(p.x>-10&&p.x<10&&p.z>-7.5&&p.z<7.5);
+        }
+
+        function advanceScene(s){
+            state.scene=s;
+            const ind=document.getElementById('scene-indicator');
+            const tools=document.getElementById('tools-panel');
+            const msgs={
+                1:'🔍 ສາກທີ 1: ການສຳຫຼວດ - ຊອກຫາແຫຼ່ງເພາະພັນ',
+                2:'🛠️ ສາກທີ 2: ປະຕິບັດ 5 ປ - ໃຊ້ເຄື່ອງມືໃຫ້ຖືກ',
+                3:'🏠 ສາກທີ 3: ເຂດປອດໄພ - ປ້ອງກັນພາຍໃນເຮືອນ',
+                4:'⚔️ ສາກທີ 4: ການປ້ອງກັນ - ຝູງຍຸງບຸກ!'
+            };
+            ind.textContent=msgs[s]; ind.style.display='block';
+            tools.style.display=(s===2)?'flex':'none';
+            if(s===2) showMessage('🎯 ເລືອກເຄື່ອງມື 5 ປ ໃຫ້ຖືກກັບແຫຼ່ງນ້ຳ!<br>ປິດ | ປ່ຽນ | ປ່ອຍ | ປັບປຸງ | ປະຕິບັດ',4000);
+            if(s===3) showMessage('🏠 ເຂົ້າເຮືອນ! ປິດປະຕູ/ປ່ອງຢ້ຽມ, ເປີດແອ/ພັດລົມ, ນຸ່ງເສື້ອແຂນຍາວ!',5000);
+            if(s===4){
+                for(let i=0;i<20;i++){
+                    const a=Math.random()*Math.PI*2;
+                    const m=mosquitoes[0].clone();
+                    m.position.set(camera.position.x+Math.cos(a)*15,1+Math.random()*3,camera.position.z+Math.sin(a)*15);
+                    m.userData.attackCooldown=Math.random()*2; scene3d.add(m); mosquitoes.push(m);
+                }
+                showMessage('🚨 ຝູງຍຸງບຸກ! ປ້ອງກັນຕົວເອງ!<br>ຢູ່ໃນເຂດປອດໄພ ຫຼື ໃຊ້ເຄື່ອງມືປ້ອງກັນ!',4000);
+            }
+        }
+
+        function showMessage(text,dur=3000){
+            const el=document.getElementById('message-overlay');
+            document.getElementById('message-text').innerHTML=text;
+            el.style.display='block';
+            if(dur>0) setTimeout(()=>{ if(!document.getElementById('msg-ok').style.display || document.getElementById('msg-ok').style.display==='none') el.style.display='none'; }, dur);
+        }
+
+        function updateHUD(){
+            const p=Math.floor((state.sourcesFixed/state.totalSources)*100);
+            document.getElementById('progress').textContent=p;
+            document.getElementById('sources-found').textContent=state.sourcesFixed;
+        }
+
+        function gameOver(reason,win=false){
+            state.gameActive=false; controls.unlock();
+            document.getElementById('go-title').textContent=win?'🎉 ຊະນະ!':'💀 Game Over';
+            document.getElementById('go-title').style.color=win?'#4CAF50':'#ff4444';
+            document.getElementById('go-reason').textContent=reason;
+            state.score+=state.health*10+(state.maxBites-state.bites)*50;
+            document.getElementById('final-score').textContent=state.score;
+            document.getElementById('game-over').style.display='flex';
+        }
+
+        // ==================== CONTROLS ====================
+        function onKeyDown(e){
+            switch(e.code){
+                case 'KeyW': case 'ArrowUp': moveForward=true; break;
+                case 'KeyA': case 'ArrowLeft': moveLeft=true; break;
+                case 'KeyS': case 'ArrowDown': moveBackward=true; break;
+                case 'KeyD': case 'ArrowRight': moveRight=true; break;
+                case 'KeyE': interact(); break;
+                case 'Digit1': selectTool('pid'); break;
+                case 'Digit2': selectTool('pian'); break;
+                case 'Digit3': selectTool('poy'); break;
+                case 'Digit4': selectTool('pupung'); break;
+                case 'Digit5': selectTool('patibat'); break;
+            }
+        }
+        function onKeyUp(e){
+            switch(e.code){
+                case 'KeyW': case 'ArrowUp': moveForward=false; break;
+                case 'KeyA': case 'ArrowLeft': moveLeft=false; break;
+                case 'KeyS': case 'ArrowDown': moveBackward=false; break;
+                case 'KeyD': case 'ArrowRight': moveRight=false; break;
+            }
+        }
+
+        function setupTouchControls(){
+            if(!state.isMobile) return;
+            document.getElementById('touch-controls').style.display='block';
+            document.getElementById('touch-actions').style.display='block';
+
+            const setDir=(dir,active)=>{
+                moveForward=dir==='forward'?active:moveForward;
+                moveBackward=dir==='backward'?active:moveBackward;
+                moveLeft=dir==='left'?active:moveLeft;
+                moveRight=dir==='right'?active:moveRight;
+            };
+
+            document.querySelectorAll('.touch-btn').forEach(btn=>{
+                const dir=btn.dataset.dir;
+                btn.addEventListener('touchstart',(e)=>{e.preventDefault(); setDir(dir,true);});
+                btn.addEventListener('touchend',(e)=>{e.preventDefault(); setDir(dir,false);});
+                btn.addEventListener('mousedown',(e)=>{e.preventDefault(); setDir(dir,true);});
+                btn.addEventListener('mouseup',(e)=>{e.preventDefault(); setDir(dir,false);});
+            });
+
+            const btnE=document.getElementById('btn-interact');
+            btnE.addEventListener('touchstart',(e)=>{e.preventDefault(); interact();});
+            btnE.addEventListener('click',(e)=>{e.preventDefault(); interact();});
+        }
+
+        function onResize(){
+            camera.aspect=window.innerWidth/window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        // ==================== MAIN LOOP ====================
+        function animate(){
+            const time=performance.now();
+            const delta=(time-prevTime)/1000;
+
+            if(controls.isLocked && state.gameActive){
+                velocity.x-=velocity.x*10.0*delta;
+                velocity.z-=velocity.z*10.0*delta;
+                direction.z=Number(moveForward)-Number(moveBackward);
+                direction.x=Number(moveRight)-Number(moveLeft);
+                direction.normalize();
+                if(moveForward||moveBackward) velocity.z-=direction.z*50.0*delta;
+                if(moveLeft||moveRight) velocity.x-=direction.x*50.0*delta;
+                controls.moveRight(-velocity.x*delta);
+                controls.moveForward(-velocity.z*delta);
+                camera.position.y=1.6;
+                camera.position.x=Math.max(-95,Math.min(95,camera.position.x));
+                camera.position.z=Math.max(-95,Math.min(95,camera.position.z));
+                checkSafeZone();
+                if(state.scene===1 && camera.position.z<20) advanceScene(2);
+            }
+
+            if(state.gameActive){
+                updateMosquitoes(delta);
+                checkInteraction();
+            }
+
+            // Fan spin
+            interactables.forEach(obj=>{
+                if(obj.userData.type==='fan' && obj.userData.on){
+                    obj.children.forEach(c=>{ if(c.userData.isBlade) c.rotation.z+=0.3; });
+                }
+            });
+
+            prevTime=time;
+            renderer.render(scene3d,camera);
+        }
+
+        // ==================== START ====================
+        function startGame(){
+            document.getElementById('start-screen').style.display='none';
+            document.getElementById('hud').style.display='flex';
+            document.getElementById('crosshair').style.display='block';
+            state.gameActive=true;
+
+            const url=new URLSearchParams(window.location.search);
+            const m1=url.get('m1');
+            if(m1){ state.mosquitoLevel=m1; state.mosquitoCount=parseInt(m1)*2||15; document.getElementById('mosquito-level').textContent=m1>50?'ສູງ':'ປານກາງ'; }
+
+            try { controls.lock(); } catch(e){ console.log('PointerLock failed',e); }
+
+            // If mobile, don't need pointer lock
+            if(state.isMobile){
+                document.getElementById('start-screen').style.display='none';
+                showMessage('🎯 ເລີ່ມສຳຫຼວດ!<br>ໃຊ້ Joystick ຊ້າຍຍ່າງ ແລະ ປຸ່ມ E ຂວາເຮັດວຽກ',5000);
+            } else {
+                showMessage('🎯 ເລີ່ມສຳຫຼວດ!<br>ຊອກຫາແຫຼ່ງເພາະພັນຍຸງອ້ອມເຮືອນ<br>ໃຊ້ W,A,S,D ເຄື່ອນທີ່ ແລະ Mouse ເບິ່ງຮອບ',5000);
+            }
+        }
+
+        // Initialize when ready
+        window.addEventListener('load', init);
+    </script>
+</body>
+</html>
