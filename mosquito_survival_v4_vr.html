@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="lo">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>🦟 Survival of the Mosquito - Fixed</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; touch-action: none; user-select: none; -webkit-user-select: none; }
+        body { background: #0a0a0a; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; overflow: hidden; color: white; }
+        #game-container { width: 100vw; height: 100vh; position: fixed; top: 0; left: 0; }
+
+        /* HUD */
+        #hud { position: fixed; top: 0; left: 0; right: 0; z-index: 100; display: flex; justify-content: space-between; align-items: flex-start; padding: 10px 15px; pointer-events: none; }
+        .hud-panel { background: rgba(0,0,0,0.8); border: 1px solid rgba(255,255,255,0.2); border-radius: 10px; padding: 10px 15px; backdrop-filter: blur(5px); }
+        .hud-title { font-size: 11px; color: #888; text-transform: uppercase; letter-spacing: 1px; }
+        .hud-value { font-size: 20px; font-weight: bold; }
+        .hud-bar-container { width: 150px; height: 8px; background: #333; border-radius: 4px; margin-top: 5px; overflow: hidden; }
+        .hud-bar { height: 100%; border-radius: 4px; transition: width 0.3s; }
+        .bar-energy { background: linear-gradient(90deg, #ff4444, #ffaa00); }
+        .bar-blood { background: linear-gradient(90deg, #aa0000, #ff0000); }
+        .bar-eggs { background: linear-gradient(90deg, #44ff44, #aaff00); }
+
+        #time-display { position: fixed; top: 10px; left: 50%; transform: translateX(-50%); z-index: 100; text-align: center; pointer-events: none; }
+        #time-icon { font-size: 28px; }
+        #time-text { font-size: 12px; color: #ccc; margin-top: 2px; }
+        #day-progress { width: 200px; height: 4px; background: #333; border-radius: 2px; margin-top: 5px; overflow: hidden; }
+        #day-progress-bar { height: 100%; background: linear-gradient(90deg, #ff6600, #ffcc00, #ff6600); width: 0%; transition: width 0.1s; }
+
+        /* Notifications */
+        #notifications { position: fixed; top: 80px; left: 50%; transform: translateX(-50%); z-index: 150; display: flex; flex-direction: column; align-items: center; gap: 8px; pointer-events: none; }
+        .notification { background: rgba(0,0,0,0.9); border: 2px solid; border-radius: 12px; padding: 10px 20px; font-size: 14px; font-weight: bold; animation: notifSlide 0.3s ease-out, notifFade 0.5s ease-in 2.5s forwards; text-align: center; max-width: 80vw; }
+        .notif-success { border-color: #44ff44; color: #44ff44; }
+        .notif-danger { border-color: #ff4444; color: #ff4444; }
+        .notif-warning { border-color: #ffaa00; color: #ffaa00; }
+        .notif-info { border-color: #44aaff; color: #44aaff; }
+        .notif-love { border-color: #ff64c8; color: #ff64c8; }
+        @keyframes notifSlide { from { transform: translateY(-30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        @keyframes notifFade { to { opacity: 0; transform: translateY(-20px); } }
+
+        /* Controls Help */
+        #controls-help { position: fixed; bottom: 100px; left: 15px; z-index: 100; background: rgba(0,0,0,0.85); border: 1px solid rgba(255,255,255,0.2); border-radius: 10px; padding: 12px 15px; font-size: 12px; color: #ccc; line-height: 1.8; pointer-events: none; }
+        #controls-help .key { background: rgba(255,255,255,0.2); padding: 2px 8px; border-radius: 4px; color: #fff; font-weight: bold; }
+
+        /* Minimap */
+        #minimap { position: fixed; bottom: 100px; right: 15px; width: 120px; height: 120px; background: rgba(0,0,0,0.7); border: 2px solid rgba(255,255,255,0.3); border-radius: 10px; z-index: 100; overflow: hidden; }
+        #minimap-canvas { width: 100%; height: 100%; }
+
+        /* Touch Controls */
+        #controls-area { position: fixed; bottom: 20px; left: 20px; z-index: 100; display: flex; flex-direction: column; gap: 10px; }
+        #dpad { display: grid; grid-template-columns: 50px 50px 50px; grid-template-rows: 50px 50px 50px; gap: 4px; }
+        .dpad-btn { width: 50px; height: 50px; background: rgba(255,255,255,0.15); border: 2px solid rgba(255,255,255,0.4); border-radius: 10px; color: white; font-size: 20px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.1s; }
+        .dpad-btn:active, .dpad-btn.active { background: rgba(255,255,255,0.4); transform: scale(0.95); }
+        .dpad-btn:nth-child(1) { grid-column: 2; grid-row: 1; }
+        .dpad-btn:nth-child(2) { grid-column: 1; grid-row: 2; }
+        .dpad-btn:nth-child(3) { grid-column: 3; grid-row: 2; }
+        .dpad-btn:nth-child(4) { grid-column: 2; grid-row: 3; }
+
+        #action-buttons { display: flex; gap: 10px; margin-top: 10px; }
+        .action-btn { padding: 12px 20px; border-radius: 25px; font-size: 13px; font-weight: bold; border: 2px solid; cursor: pointer; transition: all 0.2s; color: white; }
+        .action-btn:active { transform: scale(0.95); }
+        .btn-feed { background: rgba(255,0,0,0.3); border-color: #ff4444; }
+        .btn-feed:disabled { opacity: 0.3; cursor: not-allowed; }
+        .btn-mate { background: rgba(255,100,200,0.3); border-color: #ff64c8; }
+        .btn-lay { background: rgba(0,255,100,0.3); border-color: #44ff88; }
+        .btn-lay:disabled { opacity: 0.3; cursor: not-allowed; }
+
+        /* Screens */
+        .screen { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 500; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(0,0,0,0.95); text-align: center; padding: 20px; }
+        .screen h1 { font-size: 36px; margin-bottom: 15px; }
+        .screen h2 { font-size: 24px; margin-bottom: 20px; color: #ffaa00; }
+        .screen p { font-size: 16px; line-height: 1.8; color: #ccc; max-width: 600px; margin-bottom: 10px; }
+        .screen .btn-start { margin-top: 30px; padding: 15px 50px; font-size: 20px; background: linear-gradient(135deg, #ff4444, #ff8800); color: white; border: none; border-radius: 30px; cursor: pointer; font-weight: bold; transition: transform 0.2s; }
+        .screen .btn-start:hover { transform: scale(1.05); }
+        .hidden { display: none !important; }
+
+        .keyboard-help { background: rgba(255,255,255,0.1); border-radius: 10px; padding: 15px; margin: 15px 0; text-align: left; }
+        .keyboard-help h3 { color: #ffaa00; margin-bottom: 10px; font-size: 16px; }
+        .keyboard-help .row { display: flex; align-items: center; gap: 10px; margin: 6px 0; font-size: 14px; }
+        .keyboard-help .key { background: rgba(255,255,255,0.2); padding: 4px 12px; border-radius: 6px; color: #fff; font-weight: bold; min-width: 80px; text-align: center; }
+
+        #weather-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 50; opacity: 0; transition: opacity 0.5s; }
+        .rain { background: repeating-linear-gradient(170deg, transparent, transparent 20px, rgba(100,150,255,0.1) 20px, rgba(100,150,255,0.1) 22px); }
+        .heat { background: radial-gradient(ellipse at center, rgba(255,100,0,0.1) 0%, transparent 70%); }
+
+        #score-popup { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 200; font-size: 48px; font-weight: bold; pointer-events: none; text-shadow: 0 0 20px currentColor; animation: scoreFloat 1s ease-out forwards; }
+        @keyframes scoreFloat { 0% { opacity: 1; transform: translate(-50%, -50%) scale(0.5); } 100% { opacity: 0; transform: translate(-50%, -150%) scale(1.5); } }
+
+        /* Heart animation for mating */
+        .heart-float { position: fixed; font-size: 30px; pointer-events: none; z-index: 200; animation: heartFloat 2s ease-out forwards; }
+        @keyframes heartFloat { 0% { opacity: 1; transform: translateY(0) scale(1); } 50% { opacity: 1; transform: translateY(-50px) scale(1.3); } 100% { opacity: 0; transform: translateY(-100px) scale(0.5); } }
+    
+        /* VR Button */
+        .vr-btn { position: fixed; top: 20px; right: 20px; z-index: 600; padding: 12px 24px; background: linear-gradient(135deg, #4488ff, #8844ff); color: white; border: none; border-radius: 25px; font-size: 14px; font-weight: bold; cursor: pointer; transition: all 0.3s; display: none; }
+        .vr-btn:hover { transform: scale(1.05); box-shadow: 0 0 20px rgba(100,100,255,0.5); }
+        .vr-btn.show { display: block; }
+        .vr-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        #vr-status { position: fixed; top: 50px; right: 20px; z-index: 600; font-size: 12px; color: #aaa; background: rgba(0,0,0,0.7); padding: 5px 10px; border-radius: 5px; display: none; }
+</style>
+</head>
+<body>
+    <div id="game-container"></div>
+    <div id="weather-overlay"></div>
+
+    <div id="hud" class="hidden">
+        <div class="hud-panel">
+            <div class="hud-title">⚡ ພະລັງງານ</div>
+            <div class="hud-value" id="energy-val">100%</div>
+            <div class="hud-bar-container"><div class="hud-bar bar-energy" id="energy-bar" style="width:100%"></div></div>
+            <div class="hud-title" style="margin-top:8px">🩸 ຫຼອດເລືອດ</div>
+            <div class="hud-value" id="blood-val">0%</div>
+            <div class="hud-bar-container"><div class="hud-bar bar-blood" id="blood-bar" style="width:0%"></div></div>
+        </div>
+        <div class="hud-panel">
+            <div class="hud-title">🥚 ໄຂ່</div>
+            <div class="hud-value" id="eggs-val">0</div>
+            <div class="hud-bar-container"><div class="hud-bar bar-eggs" id="eggs-bar" style="width:0%"></div></div>
+            <div class="hud-title" style="margin-top:8px">⭐ ຄະແນນ</div>
+            <div class="hud-value" id="score-val">0</div>
+        </div>
+    </div>
+
+    <div id="time-display" class="hidden">
+        <div id="time-icon">🌅</div>
+        <div id="time-text">ຕອນເຊົ້າ - ເວລາອອກຫາກິນ</div>
+        <div id="day-progress"><div id="day-progress-bar"></div></div>
+    </div>
+
+    <div id="notifications"></div>
+
+    <div id="controls-help" class="hidden">
+        <div>⌨️ <strong>ປຸ່ມຄີບອດ:</strong></div>
+        <div><span class="key">WASD</span> ຫຼື <span class="key">↑↓←→</span> ບິນເຄື່ອນທີ່</div>
+        <div><span class="key">F</span> ດູດເລືອດ (ໃກ້ຄົນ)</div>
+        <div><span class="key">M</span> ປະສົມພັນ (ໃກ້ຍຸງຜູ້)</div>
+        <div><span class="key">E</span> ວາງໄຂ່ (ໃກ້ນ້ຳ)</div>
+    </div>
+
+    <div id="minimap" class="hidden"><canvas id="minimap-canvas"></canvas></div>
+
+    <div id="controls-area" class="hidden">
+        <div id="dpad">
+            <div class="dpad-btn" data-dir="up">▲</div>
+            <div class="dpad-btn" data-dir="left">◀</div>
+            <div class="dpad-btn" data-dir="right">▶</div>
+            <div class="dpad-btn" data-dir="down">▼</div>
+        </div>
+        <div id="action-buttons">
+            <button class="action-btn btn-feed" id="btn-feed" disabled>🩸 ດູດເລືອດ</button>
+            <button class="action-btn btn-mate" id="btn-mate">💕 ປະສົມພັນ</button>
+            <button class="action-btn btn-lay" id="btn-lay" disabled>🥚 ວາງໄຂ່</button>
+        </div>
+    </div>
+
+    <div id="start-screen" class="screen">
+        <h1>🦟 Survival of the Mosquito</h1>
+        <h2>ເກມເອົາຕົວລອດຍຸງລາຍ Aedes aegypti</h2>
+        <p>ທ່ານຄືຍຸງລາຍແມ່ທີ່ຕ້ອງເອົາຊີວິດລອດໃນ <strong>1 ມື້</strong> (2 ນາທີ) ແລະ ສືບພັນ</p>
+
+        <div class="keyboard-help">
+            <h3>⌨️ ປຸ່ມຄວບຄຸມ (Keyboard Controls)</h3>
+            <div class="row"><span class="key">W A S D</span> ຫຼື <span class="key">↑ ↓ ← →</span> <span>ບິນເຄື່ອນທີ່ / Fly</span></div>
+            <div class="row"><span class="key">F</span> <span>🩸 ດູດເລືອດ (Feed) - ເມື່ອໃກ້ຄົນ</span></div>
+            <div class="row"><span class="key">M</span> <span>💕 ປະສົມພັນ (Mate) - ເມື່ອໃກ້ຍຸງຜູ້</span></div>
+            <div class="row"><span class="key">E</span> <span>🥚 ວາງໄຂ່ (Lay Eggs) - ເມື່ອໃກ້ນ້ຳ</span></div>
+        </div>
+
+        <p>🌅 <strong>ຕອນເຊົ້າ/ແລງ:</strong> ບິນໄວ, ພະລັງງານສູງ → ລ່າເລືອດ & ປະສົມພັນ</p>
+        <p>☀️ <strong>ຕອນທ່ຽງ:</strong> ຮ້ອນຈັດ → ລີ້ບ່ອນຮົ່ມ ຫຼື ຕາຍ!</p>
+        <p>🌧️ <strong>ຝົນຕົກ:</strong> ນ້ຳຂັງເພີ່ມ → ແຫຼ່ງວາງໄຂ່ໃໝ່!</p>
+        <p>⚠️ ລະວັງມືຕົບ, ສັດຕູທຳມະຊາດ, ແລະ ຄວາມຮ້ອນ!</p>
+        <button class="btn-start" onclick="startGame()">🎮 ເລີ່ມເກມ (START)</button>
+    
+    <button class="vr-btn" id="vr-btn" onclick="enterVR()">🥽 ເຂົ້າໂໝດ VR</button>
+    <div id="vr-status">VR ບໍ່ຮອງຮັບ</div>
+</div>
+
+    <div id="gameover-screen" class="screen hidden">
+        <h1 id="gameover-title">💀 ຈົບເກມ</h1>
+        <h2 id="gameover-reason"></h2>
+        <p id="gameover-stats"></p>
+        <p id="gameover-next"></p>
+        <button class="btn-start" onclick="restartGame()">🔄 ເລີ່ມໃໝ່</button>
+    </div>
+
+    <div id="score-popup"></div>
+
+<script>
+
+// ===== WEBXR VR SUPPORT =====
+let vrSession = null;
+let vrControllers = [];
+let vrSupported = false;
+
+// Check VR support
+if ('xr' in navigator) {
+    navigator.xr.isSessionSupported('immersive-vr').then(supported => {
+        vrSupported = supported;
+        if (supported) {
+            document.getElementById('vr-btn').classList.add('show');
+            document.getElementById('vr-status').style.display = 'block';
+            document.getElementById('vr-status').textContent = '🥽 VR ພ້ອມໃຊ້ງານ';
+        } else {
+            document.getElementById('vr-status').style.display = 'block';
+            document.getElementById('vr-status').textContent = 'VR ບໍ່ຮອງຮັບໃນອຸປະກອນນີ້';
+        }
+    }).catch(() => {
+        document.getElementById('vr-status').style.display = 'block';
+        document.getElementById('vr-status').textContent = 'WebXR ບໍ່ມີ';
+    });
+} else {
+    document.getElementById('vr-status').style.display = 'block';
+    document.getElementById('vr-status').textContent = 'ບຣາວເຊີບໍ່ຮອງຮັບ WebXR';
+}
+
+async function enterVR() {
+    if (!vrSupported) return;
+    try {
+        const session = await navigator.xr.requestSession('immersive-vr', {
+            requiredFeatures: ['local-floor'],
+            optionalFeatures: ['hand-tracking']
+        });
+        vrSession = session;
+        renderer.xr.enabled = true;
+
+        // Setup controllers
+        setupVRControllers();
+
+        await renderer.xr.setSession(session);
+        document.getElementById('vr-btn').textContent = '🥽 ອອກຈາກ VR';
+        document.getElementById('vr-btn').onclick = exitVR;
+        document.getElementById('vr-status').textContent = 'VR ເປີດໃຊ້ງານ';
+
+        // Hide 2D controls in VR
+        document.getElementById('controls-area').style.display = 'none';
+        document.getElementById('controls-help').style.display = 'none';
+
+        session.addEventListener('end', () => {
+            exitVR();
+        });
+    } catch (e) {
+        console.error('VR Error:', e);
+        showNotification('❌ ເຂົ້າ VR ບໍ່ໄດ້: ' + e.message, 'danger');
+    }
+}
+
+function exitVR() {
+    if (vrSession) {
+        vrSession.end();
+        vrSession = null;
+    }
+    renderer.xr.enabled = false;
+    document.getElementById('vr-btn').textContent = '🥽 ເຂົ້າໂໝດ VR';
+    document.getElementById('vr-btn').onclick = enterVR;
+    document.getElementById('vr-status').textContent = 'VR ພ້ອມໃຊ້ງານ';
+    document.getElementById('controls-area').style.display = 'flex';
+    document.getElementById('controls-help').style.display = 'block';
+}
+
+function setupVRControllers() {
+    // Get controller references
+    for (let i = 0; i < 2; i++) {
+        const controller = renderer.xr.getController(i);
+        if (controller) {
+            controller.userData.gamepadIndex = i;
+            vrControllers[i] = controller;
+        }
+    }
+}
+
+function getVRInput() {
+    let dx = 0, dz = 0, dy = 0;
+
+    // Check gamepads from VR controllers
+    const session = renderer.xr.getSession();
+    if (session && session.inputSources) {
+        for (const source of session.inputSources) {
+            if (source.gamepad) {
+                const axes = source.gamepad.axes;
+                // Thumbstick axes: [x, y] for movement
+                if (axes && axes.length >= 2) {
+                    // Left controller typically for movement
+                    if (source.handedness === 'left' || source.handedness === 'none') {
+                        dx += axes[0]; // left/right
+                        dz += axes[1]; // forward/back
+                    }
+                    // Right controller for height
+                    if (source.handedness === 'right') {
+                        dy -= axes[1] * 0.5; // up/down
+                    }
+                }
+                // Buttons
+                const buttons = source.gamepad.buttons;
+                if (buttons && buttons.length > 0) {
+                    // Trigger or A/X button for actions
+                    if (buttons[0] && buttons[0].pressed && !source.userData.lastButton0) {
+                        attemptFeed();
+                    }
+                    if (buttons[1] && buttons[1].pressed && !source.userData.lastButton1) {
+                        attemptMate();
+                    }
+                    if (buttons[2] && buttons[2].pressed && !source.userData.lastButton2) {
+                        attemptLayEggs();
+                    }
+                    source.userData.lastButton0 = buttons[0]?.pressed;
+                    source.userData.lastButton1 = buttons[1]?.pressed;
+                    source.userData.lastButton2 = buttons[2]?.pressed;
+                }
+            }
+        }
+    }
+
+    // Also check headset orientation for directional movement
+    const cameraDirection = new THREE.Vector3();
+    camera.getWorldDirection(cameraDirection);
+    cameraDirection.y = 0;
+    cameraDirection.normalize();
+
+    const right = new THREE.Vector3();
+    right.crossVectors(cameraDirection, new THREE.Vector3(0, 1, 0)).normalize();
+
+    const moveDir = new THREE.Vector3();
+    moveDir.addScaledVector(right, dx);
+    moveDir.addScaledVector(cameraDirection, -dz);
+
+    return { dx: moveDir.x, dz: moveDir.z, dy: dy };
+}
+
+
+// ===== GAME STATE =====
+const GAME_DURATION=120;
+let gameState={started:!1,paused:!1,over:!1,energy:100,maxEnergy:100,blood:0,maxBlood:100,eggs:0,maxEggs:100,score:0,dayTime:0,weather:"clear",position:{x:0,y:2,z:0},velocity:{x:0,y:0,z:0},isFlying:!0,isHiding:!1,nearHuman:null,nearWater:null,nearMale:null,mated:!1,humansFed:[],eggsLaid:0,eggsHatched:0,timeAlive:0};
+
+// ===== AUDIO CONTEXT FOR FLYING SOUND =====
+let audioCtx=null;
+let flyOscillator=null;
+let flyGain=null;
+
+function initAudio(){if(!audioCtx){audioCtx=new (window.AudioContext||window.webkitAudioContext)();}}
+
+function startFlySound(){
+    if(!audioCtx)return;
+    if(flyOscillator)return;
+    flyOscillator=audioCtx.createOscillator();
+    flyGain=audioCtx.createGain();
+    flyOscillator.type='sawtooth';
+    flyOscillator.frequency.value=150;
+    flyGain.gain.value=0.05;
+    flyOscillator.connect(flyGain);
+    flyGain.connect(audioCtx.destination);
+    flyOscillator.start();
+}
+
+function stopFlySound(){
+    if(flyOscillator){flyOscillator.stop();flyOscillator.disconnect();flyOscillator=null;}
+    if(flyGain){flyGain.disconnect();flyGain=null;}
+}
+
+function updateFlySound(speed){
+    if(!flyOscillator)return;
+    const baseFreq=150;
+    const freq=baseFreq+speed*50;
+    flyOscillator.frequency.setValueAtTime(freq,audioCtx.currentTime);
+}
+
+// ===== THREE.JS SETUP =====
+const container=document.getElementById("game-container"),scene=new THREE.Scene;scene.fog=new THREE.Fog(13480719,20,80);
+const camera=new THREE.PerspectiveCamera(60,window.innerWidth/window.innerHeight,.1,200);camera.position.set(0,8,12);
+const renderer=new THREE.WebGLRenderer({antialias:!0});renderer.setSize(window.innerWidth,window.innerHeight);renderer.shadowMap.enabled=!0;renderer.shadowMap.type=THREE.PCFSoftShadowMap;container.appendChild(renderer.domElement);
+renderer.xr.enabled = true;
+
+const ambientLight=new THREE.AmbientLight(16777215,.5);scene.add(ambientLight);
+const sunLight=new THREE.DirectionalLight(16761024,1);sunLight.position.set(50,100,50);sunLight.castShadow=!0;sunLight.shadow.mapSize.width=2048;sunLight.shadow.mapSize.height=2048;sunLight.shadow.camera.left=-60;sunLight.shadow.camera.right=60;sunLight.shadow.camera.top=60;sunLight.shadow.camera.bottom=-60;scene.add(sunLight);
+
+const WORLD_SIZE=80;
+
+// ===== LOAD TEXTURES =====
+const textureLoader=new THREE.TextureLoader();
+// Use placeholder colors since we can't load local files directly - will use colored sprites instead
+const femaleColor=0x2d2d2d;
+const maleColor=0x3d3d3d;
+
+// Ground
+const groundGeo=new THREE.PlaneGeometry(160,160,100,100);const positions=groundGeo.attributes.position;
+for(let i=0;i<positions.count;i++){const x=positions.getX(i),y=positions.getY(i),h=Math.sin(.03*x)*Math.cos(.03*y)*1.5+Math.sin(.1*x)*.5;positions.setZ(i,h)}
+groundGeo.computeVertexNormals();
+const groundMat=new THREE.MeshStandardMaterial({color:3821146,roughness:.9});const ground=new THREE.Mesh(groundGeo,groundMat);ground.rotation.x=-Math.PI/2;ground.receiveShadow=!0;scene.add(ground);
+
+// Sky
+const skyGeo=new THREE.SphereGeometry(150,32,32);const skyMat=new THREE.MeshBasicMaterial({color:9074303,side:THREE.BackSide});const sky=new THREE.Mesh(skyGeo,skyMat);scene.add(sky);
+
+// Arrays
+const trees=[],houses=[],waterSources=[],males=[],predators=[],humans=[];
+
+// ===== CREATE TREE =====
+function createTree(x,z,scale=1){const g=new THREE.Group;const tGeo=new THREE.CylinderGeometry(.3*scale,.5*scale,3*scale,8);const tMat=new THREE.MeshStandardMaterial({color:5921370});const trunk=new THREE.Mesh(tGeo,tMat);trunk.position.y=1.5*scale;trunk.castShadow=!0;g.add(trunk);const lGeo=new THREE.SphereGeometry(2.5*scale,16,16);const lMat=new THREE.MeshStandardMaterial({color:2263842});const leaves=new THREE.Mesh(lGeo,lMat);leaves.position.y=4*scale;leaves.castShadow=!0;g.add(leaves);g.position.set(x,0,z);g.userData={type:"tree",shadeRadius:4*scale};scene.add(g);trees.push(g);return g}
+for(let i=0;i<25;i++)createTree(80*(Math.random()-.5),80*(Math.random()-.5),.8+.6*Math.random());
+// ===== CREATE HOUSE =====
+function createHouse(x,z){const g=new THREE.Group;const bGeo=new THREE.BoxGeometry(6,5,6);const bMat=new THREE.MeshStandardMaterial({color:13408520});const body=new THREE.Mesh(bGeo,bMat);body.position.y=2.5;body.castShadow=!0;g.add(body);const rGeo=new THREE.ConeGeometry(5,3,4);const rMat=new THREE.MeshStandardMaterial({color:9145088});const roof=new THREE.Mesh(rGeo,rMat);roof.position.y=6.5;roof.rotation.y=Math.PI/4;roof.castShadow=!0;g.add(roof);const dGeo=new THREE.BoxGeometry(1.5,3,.2);const dMat=new THREE.MeshStandardMaterial({color:4864544});const door=new THREE.Mesh(dGeo,dMat);door.position.set(0,1.5,3.1);g.add(door);const wGeo=new THREE.BoxGeometry(1.2,1.2,.2);const wMat=new THREE.MeshStandardMaterial({color:9074303,emissive:2236962,emissiveIntensity:.5});const w1=new THREE.Mesh(wGeo,wMat);w1.position.set(-1.5,3,3.1);g.add(w1);const w2=new THREE.Mesh(wGeo,wMat);w2.position.set(1.5,3,3.1);g.add(w2);g.position.set(x,0,z);g.userData={type:"house"};scene.add(g);houses.push(g);return g}
+for(let i=0;i<6;i++)createHouse(50*(Math.random()-.5),50*(Math.random()-.5));
+
+
+
+// ===== CREATE HUMAN (target for feeding) =====
+function createHuman(x,z){const g=new THREE.Group;
+    // Body
+    const bodyGeo=new THREE.CylinderGeometry(.8,.6,3,8);const bodyMat=new THREE.MeshStandardMaterial({color:13408520});const body=new THREE.Mesh(bodyGeo,bodyMat);body.position.y=1.5;body.castShadow=!0;g.add(body);
+    // Head
+    const headGeo=new THREE.SphereGeometry(.5,16,16);const headMat=new THREE.MeshStandardMaterial({color:16777164});const head=new THREE.Mesh(headGeo,headMat);head.position.y=3.5;head.castShadow=!0;g.add(head);
+    // Arms
+    const armGeo=new THREE.CylinderGeometry(.15,.15,2,8);const armMat=new THREE.MeshStandardMaterial({color:16777164});
+    const leftArm=new THREE.Mesh(armGeo,armMat);leftArm.position.set(-1,2.5,0);leftArm.rotation.z=.5;g.add(leftArm);
+    const rightArm=new THREE.Mesh(armGeo,armMat);rightArm.position.set(1,2.5,0);rightArm.rotation.z=-.5;g.add(rightArm);
+    // Legs
+    const legGeo=new THREE.CylinderGeometry(.2,.2,2.5,8);const legMat=new THREE.MeshStandardMaterial({color:2236962});
+    const leftLeg=new THREE.Mesh(legGeo,legMat);leftLeg.position.set(-.4,0,0);g.add(leftLeg);
+    const rightLeg=new THREE.Mesh(legGeo,legMat);rightLeg.position.set(.4,0,0);g.add(rightLeg);
+    // CO2 emission indicator (green glow)
+    const co2Geo=new THREE.SphereGeometry(.5,8,8);const co2Mat=new THREE.MeshBasicMaterial({color:65280,transparent:!0,opacity:.6});const co2=new THREE.Mesh(co2Geo,co2Mat);co2.position.set(0,4.5,0);g.add(co2);
+    // Blood indicator
+    const bloodGeo=new THREE.SphereGeometry(.2,8,8);const bloodMat=new THREE.MeshBasicMaterial({color:16711680,transparent:!0,opacity:0});const bloodIndicator=new THREE.Mesh(bloodGeo,bloodMat);bloodIndicator.position.set(0,5,0);g.add(bloodIndicator);
+    g.position.set(x,0,z);g.userData={type:"human",humanId:humans.length,co2:co2,bloodIndicator:bloodIndicator,hasBeenFed:!1};scene.add(g);humans.push(g);return g}
+for(let i=0;i<8;i++)createHuman(40*(Math.random()-.5),40*(Math.random()-.5));
+
+// ===== CREATE WATER SOURCE =====
+function createWaterSource(x,z,type="puddle"){const g=new THREE.Group;let wGeo,wMat;if("puddle"===type)wGeo=new THREE.CircleGeometry(1.5,32),wMat=new THREE.MeshPhysicalMaterial({color:26367,transparent:!0,opacity:.7,roughness:.1,metalness:.3});else if("bucket"===type){const bkGeo=new THREE.CylinderGeometry(1,.8,1.5,16);const bkMat=new THREE.MeshStandardMaterial({color:8947848});const bucket=new THREE.Mesh(bkGeo,bkMat);bucket.position.y=.75;g.add(bucket);wGeo=new THREE.CircleGeometry(.9,16);wMat=new THREE.MeshPhysicalMaterial({color:26367,transparent:!0,opacity:.8,roughness:.1,metalness:.3})}else if("tire"===type){const tGeo=new THREE.TorusGeometry(1,.4,16,32);const tMat=new THREE.MeshStandardMaterial({color:1710618});const tire=new THREE.Mesh(tGeo,tMat);tire.rotation.x=Math.PI/2;tire.position.y=.4;g.add(tire);wGeo=new THREE.CircleGeometry(.8,16);wMat=new THREE.MeshPhysicalMaterial({color:26367,transparent:!0,opacity:.8,roughness:.1,metalness:.3})}const water=new THREE.Mesh(wGeo,wMat);water.rotation.x=-Math.PI/2;water.position.y="puddle"===type?.05:1.4;g.add(water);g.position.set(x,0,z);g.userData={type:"water",waterType:type,dangerLevel:Math.random()};scene.add(g);waterSources.push(g);return g}
+for(let i=0;i<10;i++){const types=["puddle","bucket","tire"];createWaterSource(40*(Math.random()-.5),40*(Math.random()-.5),types[Math.floor(3*Math.random())])}
+
+// ===== CREATE MALE MOSQUITO (visible with antennae) =====
+function createMaleMosquito(x,z){const g=new THREE.Group;
+    // Body - larger and more visible
+    const bodyGeo=new THREE.SphereGeometry(.3,16,16);bodyGeo.scale(1,.8,1.5);
+    const bodyMat=new THREE.MeshStandardMaterial({color:2763306,roughness:.3,metalness:.1});
+    const body=new THREE.Mesh(bodyGeo,bodyMat);body.castShadow=!0;g.add(body);
+    // Head
+    const headGeo=new THREE.SphereGeometry(.2,16,16);const headMat=new THREE.MeshStandardMaterial({color:1710618});
+    const head=new THREE.Mesh(headGeo,headMat);head.position.set(0,.1,.3);g.add(head);
+    // Bushy antennae (male characteristic)
+    const antGeo=new THREE.SphereGeometry(.15,8,8);const antMat=new THREE.MeshStandardMaterial({color:4473924,wireframe:!0});
+    const leftAnt=new THREE.Mesh(antGeo,antMat);leftAnt.position.set(-.15,.2,.3);leftAnt.scale.set(1,2,1);g.add(leftAnt);
+    const rightAnt=new THREE.Mesh(antGeo,antMat);rightAnt.position.set(.15,.2,.3);rightAnt.scale.set(1,2,1);g.add(rightAnt);
+    // Wings
+    const wingGeo=new THREE.PlaneGeometry(1.2,.4);const wingMat=new THREE.MeshBasicMaterial({color:16777215,transparent:!0,opacity:.4,side:THREE.DoubleSide});
+    const leftWing=new THREE.Mesh(wingGeo,wingMat);leftWing.position.set(-.4,.3,0);g.add(leftWing);
+    const rightWing=new THREE.Mesh(wingGeo,wingMat);rightWing.position.set(.4,.3,0);g.add(rightWing);
+    // Pheromone cloud (yellow glow)
+    const pherGeo=new THREE.SphereGeometry(.8,8,8);const pherMat=new THREE.MeshBasicMaterial({color:16755200,transparent:!0,opacity:.2});
+    const pher=new THREE.Mesh(pherGeo,pherMat);pher.position.y=.5;g.add(pher);
+    // Label
+    const labelGeo=new THREE.PlaneGeometry(1,.3);
+    // Store references for animation
+    g.position.set(x,2,z);g.userData={type:"male",id:males.length,pheromone:pher,leftWing:leftWing,rightWing:rightWing,leftAnt:leftAnt,rightAnt:rightAnt};scene.add(g);males.push(g);return g}
+for(let i=0;i<5;i++)createMaleMosquito(24*(Math.random()-.5),24*(Math.random()-.5));
+
+// ===== CREATE PREDATOR =====
+function createPredator(x,z,type){const g=new THREE.Group;if("spider"===type){const bGeo=new THREE.SphereGeometry(.3,8,8);const bMat=new THREE.MeshStandardMaterial({color:1710618});const body=new THREE.Mesh(bGeo,bMat);g.add(body);for(let i=0;i<8;i++){const lGeo=new THREE.CylinderGeometry(.02,.01,1,4);const leg=new THREE.Mesh(lGeo,bMat);const angle=i/8*Math.PI*2;leg.position.set(Math.cos(angle)*.4,0,Math.sin(angle)*.4);leg.rotation.z=Math.cos(angle)*.5;leg.rotation.x=Math.sin(angle)*.5;g.add(leg)}}else if("dragonfly"===type){const bGeo=new THREE.CylinderGeometry(.08,.05,1,6);const bMat=new THREE.MeshStandardMaterial({color:43690});const body=new THREE.Mesh(bGeo,bMat);body.rotation.x=Math.PI/2;g.add(body);const wGeo=new THREE.PlaneGeometry(1.5,.3);const wMat=new THREE.MeshBasicMaterial({color:8947848,transparent:!0,opacity:.5,side:THREE.DoubleSide});const w1=new THREE.Mesh(wGeo,wMat);w1.position.set(.5,0,0);g.add(w1);const w2=new THREE.Mesh(wGeo,wMat);w2.position.set(-.5,0,0);g.add(w2)}g.position.set(x,"spider"===type?.5:2+3*Math.random(),z);g.userData={type:"predator",predatorType:type,speed:.05+.05*Math.random()};scene.add(g);predators.push(g);return g}
+for(let i=0;i<6;i++){const types=["spider","dragonfly"];createPredator(40*(Math.random()-.5),40*(Math.random()-.5),types[Math.floor(2*Math.random())])}
+
+// ===== PLAYER (FEMALE MOSQUITO) - BIGGER AND MORE VISIBLE =====
+const player=new THREE.Group;
+// Main body - larger
+const pBodyGeo=new THREE.SphereGeometry(.35,16,16);pBodyGeo.scale(1,.8,1.5);
+const pBodyMat=new THREE.MeshStandardMaterial({color:2960685,roughness:.3,metalness:.1});
+const pBody=new THREE.Mesh(pBodyGeo,pBodyMat);pBody.castShadow=!0;player.add(pBody);
+// Head
+const pHeadGeo=new THREE.SphereGeometry(.2,16,16);const pHeadMat=new THREE.MeshStandardMaterial({color:1710618});
+const pHead=new THREE.Mesh(pHeadGeo,pHeadMat);pHead.position.set(0,.1,.35);player.add(pHead);
+// Eyes - bigger and red
+const pEyeGeo=new THREE.SphereGeometry(.12,8,8);const pEyeMat=new THREE.MeshStandardMaterial({color:16724736,emissive:3342336,emissiveIntensity:.5});
+const pLeftEye=new THREE.Mesh(pEyeGeo,pEyeMat);pLeftEye.position.set(-.12,.15,.4);player.add(pLeftEye);
+const pRightEye=new THREE.Mesh(pEyeGeo,pEyeMat);pRightEye.position.set(.12,.15,.4);player.add(pRightEye);
+// Proboscis
+const pProbGeo=new THREE.CylinderGeometry(.02,.015,.6,6);const pProbMat=new THREE.MeshStandardMaterial({color:1118481});
+const pProb=new THREE.Mesh(pProbGeo,pProbMat);pProb.position.set(0,-.15,.5);pProb.rotation.x=.3;player.add(pProb);
+// Wings - bigger
+const pWingGeo=new THREE.PlaneGeometry(1.2,.5);const pWingMat=new THREE.MeshBasicMaterial({color:16777215,transparent:!0,opacity:.4,side:THREE.DoubleSide});
+const pLeftWing=new THREE.Mesh(pWingGeo,pWingMat);pLeftWing.position.set(-.5,.3,0);player.add(pLeftWing);
+const pRightWing=new THREE.Mesh(pWingGeo,pWingMat);pRightWing.position.set(.5,.3,0);player.add(pRightWing);
+// Legs - yellow with white bands
+for(let i=0;i<6;i++){const lGeo=new THREE.CylinderGeometry(.015,.012,.5,4);const lMat=new THREE.MeshStandardMaterial({color:16768256});const leg=new THREE.Mesh(lGeo,lMat);const side=i<3?-1:1;const zPos=-.15+i%3*.2;leg.position.set(side*.25,-.25,zPos);leg.rotation.z=side*.5;player.add(leg)}
+// Abdomen
+const pAbdomenGeo=new THREE.SphereGeometry(.25,16,16);pAbdomenGeo.scale(.9,.9,1.3);
+const pAbdomenMat=new THREE.MeshStandardMaterial({color:4013373});
+const pAbdomen=new THREE.Mesh(pAbdomenGeo,pAbdomenMat);pAbdomen.position.set(0,0,-.4);player.add(pAbdomen);
+// Indicator ring (green when safe, red when danger)
+const ringGeo=new THREE.RingGeometry(.8,1,32);const ringMat=new THREE.MeshBasicMaterial({color:65280,transparent:!0,opacity:.6,side:THREE.DoubleSide});
+const indicatorRing=new THREE.Mesh(ringGeo,ringMat);indicatorRing.rotation.x=-Math.PI/2;indicatorRing.position.y=-.5;player.add(indicatorRing);
+// Glow effect
+const glowGeo=new THREE.SphereGeometry(.6,8,8);const glowMat=new THREE.MeshBasicMaterial({color:16711935,transparent:!0,opacity:.15});
+const glow=new THREE.Mesh(glowGeo,glowMat);glow.position.y=.3;player.add(glow);
+player.position.set(0,2,0);player.castShadow=!0;scene.add(player);
+
+// ===== INPUT =====
+const keys={},touchState={up:!1,down:!1,left:!1,right:!1};
+document.addEventListener("keydown",e=>{const k=e.key.toLowerCase();keys[k]=!0;if(k==="f"){e.preventDefault();attemptFeed();}if(k==="m"){e.preventDefault();attemptMate();}if(k==="e"){e.preventDefault();attemptLayEggs();}if(["arrowup","arrowdown","arrowleft","arrowright","w","a","s","d"," "].includes(k))e.preventDefault();});
+document.addEventListener("keyup",e=>{keys[e.key.toLowerCase()]=!1});
+
+document.querySelectorAll(".dpad-btn").forEach(btn=>{const dir=btn.dataset.dir;const start=e=>{e.preventDefault();btn.classList.add("active");touchState[dir]=!0};const end=e=>{e.preventDefault();btn.classList.remove("active");touchState[dir]=!1};btn.addEventListener("touchstart",start);btn.addEventListener("touchend",end);btn.addEventListener("mousedown",start);btn.addEventListener("mouseup",end);btn.addEventListener("mouseleave",end);});
+
+document.getElementById("btn-feed").addEventListener("click",attemptFeed);
+document.getElementById("btn-mate").addEventListener("click",attemptMate);
+document.getElementById("btn-lay").addEventListener("click",attemptLayEggs);
+
+// ===== GAME FUNCTIONS =====
+function showNotification(text,type="info"){const area=document.getElementById("notifications");const notif=document.createElement("div");notif.className=`notification notif-${type}`;notif.textContent=text;area.appendChild(notif);setTimeout(()=>notif.remove(),3e3)}
+function showScorePopup(text,color){const popup=document.getElementById("score-popup");popup.textContent=text;popup.style.color=color;popup.style.animation="none";popup.offsetHeight;popup.style.animation="scoreFloat 1s ease-out forwards";}
+
+// Show floating hearts
+function showHearts(x,y){for(let i=0;i<5;i++){setTimeout(()=>{const heart=document.createElement("div");heart.className="heart-float";heart.textContent=["💖","💕","💗","💝","💘"][i];heart.style.left=x+80*(Math.random()-.5)+"px";heart.style.top=y+80*(Math.random()-.5)+"px";heart.style.fontSize=(20+20*Math.random())+"px";document.body.appendChild(heart);setTimeout(()=>heart.remove(),2e3)},i*200);}}
+
+function updateHUD(){document.getElementById("energy-val").textContent=Math.floor(gameState.energy)+"%";document.getElementById("energy-bar").style.width=gameState.energy/gameState.maxEnergy*100+"%";document.getElementById("blood-val").textContent=Math.floor(gameState.blood)+"%";document.getElementById("blood-bar").style.width=gameState.blood/gameState.maxBlood*100+"%";document.getElementById("eggs-val").textContent=gameState.eggs;document.getElementById("eggs-bar").style.width=gameState.eggs/gameState.maxEggs*100+"%";document.getElementById("score-val").textContent=gameState.score;document.getElementById("btn-feed").disabled=!gameState.nearHuman||gameState.blood>=gameState.maxBlood;document.getElementById("btn-lay").disabled=!gameState.nearWater||gameState.eggs<=0;document.getElementById("btn-mate").disabled=gameState.mated||!gameState.nearMale;}
+
+function getTimeOfDay(){const t=gameState.dayTime;return t<.2?{name:"ຕອນເຊົ້າ",icon:"🌅",desc:"ເວລາອອກຫາກິນ",multiplier:1.5}:t<.4?{name:"ເຊົ້າສາຍ",icon:"☀️",desc:"ແດດເລີ່ມແຮງ",multiplier:1.2}:t<.6?{name:"ຕອນທ່ຽງ",icon:"🔥",desc:"ຮ້ອນຈັດ! ລີ້ບ່ອນຮົ່ມ!",multiplier:.5}:t<.8?{name:"ຕອນບ່າຍ",icon:"🌤️",desc:"ແດດລົດ",multiplier:1}:{name:"ຕອນແລງ",icon:"🌇",desc:"ເວລາອອກຫາກິນ",multiplier:1.5}}
+
+function updateTimeOfDay(){const timeInfo=getTimeOfDay();document.getElementById("time-icon").textContent=timeInfo.icon;document.getElementById("time-text").textContent=timeInfo.name+" - "+timeInfo.desc;document.getElementById("day-progress-bar").style.width=100*gameState.dayTime+"%";const t=gameState.dayTime;let skyColor,fogColor,sunIntensity;t<.2?(skyColor=16767404,fogColor=16767404,sunIntensity=.8):t<.4?(skyColor=9074303,fogColor=9074303,sunIntensity=1):t<.6?(skyColor=16771004,fogColor=16771004,sunIntensity=1.3):t<.8?(skyColor=9074303,fogColor=9074303,sunIntensity=.9):(skyColor=16745190,fogColor=16745190,sunIntensity=.7);scene.background=new THREE.Color(skyColor);scene.fog.color=new THREE.Color(fogColor);sunLight.intensity=sunIntensity;return timeInfo;}
+
+function checkProximity(){const pos=player.position;
+    gameState.nearHuman=null;
+    for(const human of humans){const dist=pos.distanceTo(human.position);if(dist<6&&!human.userData.hasBeenFed){gameState.nearHuman=human;break}}
+    gameState.nearWater=null;
+    for(const water of waterSources){if(pos.distanceTo(water.position)<4){gameState.nearWater=water;break}}
+    gameState.nearMale=null;
+    for(const male of males){if(pos.distanceTo(male.position)<5){gameState.nearMale=male;break}}
+    gameState.isHiding=!1;
+    for(const tree of trees){if(pos.distanceTo(tree.position)<tree.userData.shadeRadius&&pos.y<4){gameState.isHiding=!0;break}}
+    for(const pred of predators){if(pos.distanceTo(pred.position)<2){gameOver("ຖືກສັດຕູກິນ! "+("spider"===pred.userData.predatorType?"🕷️ ແມງມຸມ":"🦋 ແມງປໍ"));return}}
+}
+
+function attemptFeed(){if(!gameState.nearHuman||gameState.blood>=gameState.maxBlood){showNotification("❌ ບໍ່ສາມາດດູດເລືອດ! ບິນໃກ້ຄົນກອນ (ເຫ็ນວົງສີຂຽວ)","warning");return;}
+    const human=gameState.nearHuman;
+    // Move closer to human
+    const targetPos=human.position.clone();targetPos.y+=3.5;
+    player.position.lerp(targetPos,.2);
+    // Risk of being swatted
+    const swatChance=.2+(gameState.dayTime>.4&&gameState.dayTime<.6?.3:0);
+    if(Math.random()<swatChance){gameState.score-=20;showNotification("💥 ຖືກມະນຸດຕົບ! ເຈັບປວດ!","danger");showScorePopup("-20","#ff4444");gameState.energy-=15;updateHUD();if(gameState.energy<=0)gameOver("ຫມົດແຮງຍ້ອນຖືກຕົບ!");return}
+    gameState.blood=Math.min(gameState.maxBlood,gameState.blood+40);gameState.energy=Math.min(gameState.maxEnergy,gameState.energy+20);gameState.score+=10;gameState.humansFed.push(human.userData.humanId);human.userData.hasBeenFed=!0;
+    // Visual feedback
+    human.userData.bloodIndicator.material.opacity=.8;
+    setTimeout(()=>human.userData.bloodIndicator.material.opacity=0,2e3);
+    // Abdomen turns red temporarily
+    pAbdomenMat.color.setHex(11141120);setTimeout(()=>pAbdomenMat.color.setHex(4013373),1e3);
+    showNotification("🩸 ດູດເລືອດສຳເລັດ! +10 ຄະແນນ","success");showScorePopup("+10","#44ff44");updateHUD();
+}
+
+function attemptMate(){if(gameState.mated||!gameState.nearMale){showNotification("❌ ບໍ່ສາມາດປະສົມພັນ! ບິນໃກ້ຍຸງຜູ້ກອນ (ມີສາຍຕາຂົນປຸຍ)","warning");return;}
+    // Show hearts animation
+    const screenPos=player.position.clone();screenPos.project(camera);
+    const x=(screenPos.x*.5+.5)*window.innerWidth;const y=(-screenPos.y*.5+.5)*window.innerHeight;
+    showHearts(x,y);
+    // Create heart particles in 3D
+    for(let i=0;i<10;i++){const hGeo=new THREE.SphereGeometry(.1,8,8);const hMat=new THREE.MeshBasicMaterial({color:16711935});const heart=new THREE.Mesh(hGeo,hMat);heart.position.copy(player.position);heart.position.x+=Math.random()-.5;heart.position.y+=Math.random();heart.position.z+=Math.random()-.5;scene.add(heart);setTimeout(()=>scene.remove(heart),2e3);}
+    gameState.mated=!0;gameState.eggs=Math.min(gameState.maxEggs,gameState.eggs+50);gameState.score+=20;
+    showNotification("💕 ປະສົມພັນສຳເລັດ! ໄຂ່ພ້ອມແລ້ວ! +20 ຄະແນນ","love");showScorePopup("+20","#ff64c8");updateHUD();
+}
+
+function attemptLayEggs(){if(!gameState.nearWater||gameState.eggs<=0){showNotification("❌ ບໍ່ສາມາດວາງໄຂ່! ບິນໃກ້ນ້ຳກອນ (ເຫ็ນສີຟ້າ) ຫຼື ບໍ່ມີໄຂ່","warning");return;}
+    const water=gameState.nearWater;const danger=water.userData.dangerLevel;
+    if(danger>.6){gameState.eggs=0;gameState.score-=20;showNotification("🐟 ໄຂ່ຖືກປາ/ແມງມຸມກິນ! -20 ຄະແນນ","danger");showScorePopup("-20","#ff4444");updateHUD();return}
+    const eggsLaid=Math.min(gameState.eggs,20);gameState.eggs-=eggsLaid;gameState.eggsLaid+=eggsLaid;gameState.score+=10;
+    const hatchChance=1-danger;const hatched=Math.floor(eggsLaid*hatchChance);gameState.eggsHatched+=hatched;
+    // Visual: egg particles
+    for(let i=0;i<eggsLaid;i++){const eGeo=new THREE.SphereGeometry(.05,4,4);const eMat=new THREE.MeshBasicMaterial({color:16777215});const egg=new THREE.Mesh(eGeo,eMat);egg.position.copy(water.position);egg.position.y+=.5;egg.position.x+=Math.random()-.5;egg.position.z+=Math.random()-.5;scene.add(egg);setTimeout(()=>scene.remove(egg),3e3);}
+    if(hatched>0){gameState.score+=40;showNotification(`🥚 ວາງໄຂ່ ${eggsLaid} ໜ່ວຍ, ຟັກສຳເລັດ ${hatched} ໜ່ວຍ! +50 ຄະແນນ`,`success`);showScorePopup("+50","#44ff44")}
+    else{showNotification(`🥚 ວາງໄຂ່ ${eggsLaid} ໜ່ວຍ +10 ຄະແນນ (ຍັງບໍ່ຟັກ)`,`success`);showScorePopup("+10","#44ff44")}
+    updateHUD();
+}
+
+function spawnRainWater(){for(let i=0;i<5;i++){const x=40*(Math.random()-.5),z=40*(Math.random()-.5);createWaterSource(x,z,"puddle")}showNotification("🌧️ ຝົນຕົກ! ນ້ຳຂັງເພີ່ມ! ແຫຼ່ງວາງໄຂ່ໃໝ່ປະກົດ!","info")}
+
+function triggerWeather(){const rand=Math.random();const overlay=document.getElementById("weather-overlay");if(rand<.15&&"rain"!==gameState.weather){gameState.weather="rain";overlay.className="rain";overlay.style.opacity="1";spawnRainWater();setTimeout(()=>{gameState.weather="clear";overlay.style.opacity="0"},15e3)}else if(rand>.85&&gameState.dayTime>.3&&gameState.dayTime<.7){gameState.weather="heat";overlay.className="heat";overlay.style.opacity="1";setTimeout(()=>{gameState.weather="clear";overlay.style.opacity="0"},1e4)}}
+
+// ===== GAME LOOP =====
+let lastTime=0,gameTimer=0;
+
+function gameLoop(timestamp){if(!gameState.started||gameState.over){renderer.render(scene,camera);return}
+    const delta=(timestamp-lastTime)/1e3;lastTime=timestamp;
+    gameTimer+=delta;gameState.timeAlive+=delta;gameState.dayTime=gameTimer/GAME_DURATION%1;
+    const timeInfo=updateTimeOfDay();
+    let energyDrain=2*delta;
+    if(gameState.dayTime>.4&&gameState.dayTime<.6){energyDrain*=2;if(!gameState.isHiding){energyDrain*=1.5;if(Math.random()<.01)showNotification("🔥 ຮ້ອນຈັດ! ຫາບ່ອນຮົ່ມດ່ວນ!","warning")}}
+    if("rain"===gameState.weather)energyDrain*=1.3;
+    gameState.energy-=energyDrain;
+    if(gameState.energy<=0){gameOver("ຫມົດແຮງ! ຍຸງລາຍຕາຍຍ້ອນຄວາມຮ້ອນ/ອ່ອນເພຍ");return}
+    let dx=0,dz=0,vrDy=0;
+    // VR Input
+    if (renderer.xr.isPresenting) {
+        const vrInput = getVRInput();
+        dx = vrInput.dx;
+        dz = vrInput.dz;
+        vrDy = vrInput.dy;
+    } else {
+        // Keyboard/Touch Input
+        if(keys.arrowup||keys.w||touchState.up)dz-=1;
+        if(keys.arrowdown||keys.s||touchState.down)dz+=1;
+        if(keys.arrowleft||keys.a||touchState.left)dx-=1;
+        if(keys.arrowright||keys.d||touchState.right)dx+=1;
+    }
+    const isMoving=0!==dx||0!==dz;
+    if(isMoving){const len=Math.sqrt(dx*dx+dz*dz);dx/=len;dz/=len;startFlySound();}else{stopFlySound();}
+    const speed=8*timeInfo.multiplier*("rain"===gameState.weather?.7:1)*delta;
+    gameState.position.x+=dx*speed;gameState.position.z+=dz*speed;
+    gameState.position.x=Math.max(-40,Math.min(40,gameState.position.x));
+    gameState.position.z=Math.max(-40,Math.min(40,gameState.position.z));
+    const targetY=gameState.isHiding?1.5:2+Math.sin(2*gameTimer)*.3 + vrDy;
+    gameState.position.y+=.1*(targetY-gameState.position.y);
+    gameState.position.y = Math.max(0.5, Math.min(15, gameState.position.y));
+    player.position.set(gameState.position.x,gameState.position.y,gameState.position.z);
+    // Update fly sound pitch based on speed
+    updateFlySound(speed/delta);
+    // Rotate player to face movement
+    if(isMoving){const targetRot=Math.atan2(dx,dz);player.rotation.y+=.1*(targetRot-player.rotation.y);}
+    // Animate wings
+    const wingSpeed=25;
+    pLeftWing.rotation.z=Math.sin(wingSpeed*gameTimer)*.6;
+    pRightWing.rotation.z=-Math.sin(wingSpeed*gameTimer)*.6;
+    pLeftWing.scale.y=1+Math.sin(wingSpeed*gameTimer)*.2;
+    pRightWing.scale.y=1+Math.sin(wingSpeed*gameTimer)*.2;
+    // Animate glow
+    glow.scale.setScalar(1+Math.sin(gameTimer*3)*.1);
+    // Animate males
+    males.forEach((male,i)=>{male.position.x+=Math.sin(.5*gameTimer+i)*.02;male.position.z+=Math.cos(.3*gameTimer+i)*.02;male.position.y=2+Math.sin(2*gameTimer+i)*.5;male.userData.leftWing.rotation.z=Math.sin(wingSpeed*gameTimer+i)*.6;male.userData.rightWing.rotation.z=-Math.sin(wingSpeed*gameTimer+i)*.6;male.userData.pheromone.material.opacity=.15+Math.sin(3*gameTimer+i)*.1;male.userData.leftAnt.rotation.z=Math.sin(gameTimer*2+i)*.1;male.userData.rightAnt.rotation.z=-Math.sin(gameTimer*2+i)*.1;});
+    // Animate predators
+    predators.forEach((pred,i)=>{if("dragonfly"===pred.userData.predatorType){pred.position.x+=Math.sin(.8*gameTimer+2*i)*.05;pred.position.z+=Math.cos(.6*gameTimer+2*i)*.05;pred.children[1].rotation.z=Math.sin(20*gameTimer)*.3;pred.children[2].rotation.z=-Math.sin(20*gameTimer)*.3}});
+    // Animate humans
+    humans.forEach((human,i)=>{human.position.y=Math.sin(gameTimer*.5+i)*.1;human.userData.co2.material.opacity=.4+Math.sin(gameTimer*2+i)*.2;});
+    // Camera follow
+    camera.position.x+=.05*(gameState.position.x-camera.position.x);camera.position.z+=.05*(gameState.position.z+10-camera.position.z);camera.position.y+=.05*(gameState.position.y+8-camera.position.y);camera.lookAt(gameState.position.x,gameState.position.y,gameState.position.z);
+    checkProximity();
+    if(Math.random()<.001)triggerWeather();
+    if(gameTimer>=GAME_DURATION){if(gameState.eggsHatched>0)gameOver("🎉 ສຳເລັດ! ຟັກໄຂ່ "+gameState.eggsHatched+" ຕົວ! ເຈົ້າແມ່ນຍຸງແມ່ທີ່ປະສົບຜົນສຳເລັດ!",!0);else gameOver("⏰ ຫມົດມື້! ເຈົ້າບໍ່ໄດ້ສືບພັນ... ຊີວິດຍຸງສິ້ນສຸດລົງໂດຍບໍ່ມີລູກຫຼານ");return}
+    updateHUD();updateMinimap();renderer.render(scene,camera);
+}
+
+// ===== MINIMAP =====
+const minimapCanvas=document.getElementById("minimap-canvas"),minimapCtx=minimapCanvas.getContext("2d");minimapCanvas.width=120;minimapCanvas.height=120;
+function updateMinimap(){const ctx=minimapCtx,w=120,h=120,scale=w/WORLD_SIZE;ctx.fillStyle="#1a3a1a";ctx.fillRect(0,0,w,h);ctx.fillStyle="#228B22";trees.forEach(t=>{ctx.beginPath();ctx.arc((t.position.x+40)*scale,(t.position.z+40)*scale,3,0,2*Math.PI);ctx.fill()});ctx.fillStyle="#ccaa88";houses.forEach(h=>{ctx.fillRect((h.position.x+40)*scale-2,(h.position.z+40)*scale-2,4,4)});ctx.fillStyle="#0066aa";waterSources.forEach(water=>{ctx.beginPath();ctx.arc((water.position.x+40)*scale,(water.position.z+40)*scale,2,0,2*Math.PI);ctx.fill()});ctx.fillStyle="#ffaa00";males.forEach(m=>{ctx.beginPath();ctx.arc((m.position.x+40)*scale,(m.position.z+40)*scale,3,0,2*Math.PI);ctx.fill()});ctx.fillStyle="#ff0000";humans.forEach(h=>{if(!h.userData.hasBeenFed){ctx.beginPath();ctx.arc((h.position.x+40)*scale,(h.position.z+40)*scale,3,0,2*Math.PI);ctx.fill()}});const px=(gameState.position.x+40)*scale,pz=(gameState.position.z+40)*scale;ctx.fillStyle="#ff00ff";ctx.beginPath();ctx.arc(px,pz,4,0,2*Math.PI);ctx.fill();ctx.strokeStyle="#ffffff";ctx.lineWidth=2;ctx.stroke();}
+
+// ===== GAME FLOW =====
+function startGame(){initAudio();document.getElementById("start-screen").classList.add("hidden");document.getElementById("hud").classList.remove("hidden");document.getElementById("time-display").classList.remove("hidden");document.getElementById("controls-help").classList.remove("hidden");document.getElementById("minimap").classList.remove("hidden");document.getElementById("controls-area").classList.remove("hidden");gameState.started=!0;gameState.over=!1;gameState.energy=100;gameState.blood=0;gameState.eggs=0;gameState.score=0;gameState.mated=!1;gameState.humansFed=[];gameState.eggsLaid=0;gameState.eggsHatched=0;gameState.timeAlive=0;gameTimer=0;showNotification("🦟 ເລີ່ມຊີວິດຍຸງແມ່! 1 ມື້ = 2 ນາທີ","info");showNotification("🔊 ເປີດລຳໂພງເພື່ອໄດ້ຍິນສຽງຍຸງບິນ!","info");lastTime=performance.now();renderer.setAnimationLoop(gameLoop);}
+
+function gameOver(reason,won=!1){gameState.over=!0;stopFlySound();document.getElementById("gameover-screen").classList.remove("hidden");document.getElementById("gameover-title").textContent=won?"🎉 ຊະນະ!":"💀 ຈົບເກມ";document.getElementById("gameover-title").style.color=won?"#44ff44":"#ff4444";document.getElementById("gameover-reason").textContent=reason;const stats=`⭐ ຄະແນນລວມ: ${gameState.score} | 🩸 ດູດເລືອດ: ${gameState.humansFed.length} ຄັ້ງ | 🥚 ໄຂ່ຟັກ: ${gameState.eggsHatched} ຕົວ | ⏱️ ຊີວິດຢູ່: ${Math.floor(gameState.timeAlive)}ວິ`;document.getElementById("gameover-stats").textContent=stats;if(won)document.getElementById("gameover-next").innerHTML=`<strong>🔄 ໂມດູນທີ 2:</strong> ເຈົ້າໄດ້ສືບພັນສຳເລັດ! ລູກຍຸງ ${gameState.eggsHatched} ຕົວຈະກາຍເປັນສັດຕູໃນໂມດູນຕໍ່ໄປ!`;else document.getElementById("gameover-next").textContent="ລອງໃໝ່ອີກຄັ້ງ! ຮຽນຮູ້ຈາກຄວາມຜິດພາດ...";}
+
+function restartGame(){document.getElementById("gameover-screen").classList.add("hidden");document.getElementById("hud").classList.add("hidden");document.getElementById("time-display").classList.add("hidden");document.getElementById("controls-help").classList.add("hidden");document.getElementById("minimap").classList.add("hidden");document.getElementById("controls-area").classList.add("hidden");document.getElementById("start-screen").classList.remove("hidden");gameState.position={x:0,y:2,z:0};player.position.set(0,2,0);camera.position.set(0,8,12);}
+
+window.addEventListener("resize",()=>{camera.aspect=window.innerWidth/window.innerHeight;camera.updateProjectionMatrix();renderer.setSize(window.innerWidth,window.innerHeight)});
+renderer.render(scene,camera);
+</script>
+</body>
+</html>
