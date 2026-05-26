@@ -1,0 +1,811 @@
+<!DOCTYPE html>
+<html lang="lo">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ແບບຟອມເກັບຄະແນນ THE COACH - ໂຄງການ SIMPLE</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Lao:wght@400;600;700&display=swap');
+
+        :root {
+            --primary: #1565c0;
+            --hero: #2e7d32;
+            --penalty: #c62828;
+            --gold: #f9a825;
+            --bg: #f5f7fa;
+            --card: #ffffff;
+            --text: #263238;
+            --border: #e0e0e0;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Noto Sans Lao', 'Phetsarath OT', 'Arial', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.7;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Header */
+        .main-header {
+            background: linear-gradient(135deg, #1a237e 0%, #283593 100%);
+            color: white;
+            padding: 40px 30px;
+            border-radius: 16px;
+            text-align: center;
+            margin-bottom: 30px;
+            box-shadow: 0 8px 32px rgba(26,35,126,0.3);
+        }
+
+        .main-header h1 {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+
+        .main-header p {
+            font-size: 16px;
+            opacity: 0.9;
+        }
+
+        .badge {
+            display: inline-block;
+            background: rgba(255,255,255,0.2);
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 13px;
+            margin-top: 12px;
+        }
+
+        /* Cards */
+        .card {
+            background: var(--card);
+            border-radius: 12px;
+            padding: 28px;
+            margin-bottom: 24px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+            border: 1px solid var(--border);
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 20px;
+            padding-bottom: 16px;
+            border-bottom: 2px solid var(--border);
+        }
+
+        .card-icon {
+            width: 44px;
+            height: 44px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+        }
+
+        .card-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        /* Sections */
+        .section-hero .card-icon { background: #e8f5e9; }
+        .section-hero .card-title { color: var(--hero); }
+
+        .section-penalty .card-icon { background: #ffebee; }
+        .section-penalty .card-title { color: var(--penalty); }
+
+        .section-summary .card-icon { background: #e3f2fd; }
+        .section-summary .card-title { color: var(--primary); }
+
+        .section-guide .card-icon { background: #fff8e1; }
+        .section-guide .card-title { color: var(--gold); }
+
+        /* Code Block */
+        .code-block {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 24px;
+            border-radius: 10px;
+            overflow-x: auto;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 13px;
+            line-height: 1.6;
+            margin: 16px 0;
+            border-left: 4px solid var(--primary);
+        }
+
+        .code-block .comment { color: #6a9955; }
+        .code-block .keyword { color: #569cd6; }
+        .code-block .string { color: #ce9178; }
+        .code-block .number { color: #b5cea8; }
+        .code-block .function { color: #dcdcaa; }
+
+        /* Steps */
+        .steps {
+            counter-reset: step;
+        }
+
+        .step {
+            position: relative;
+            padding-left: 60px;
+            margin-bottom: 24px;
+        }
+
+        .step::before {
+            counter-increment: step;
+            content: counter(step);
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 40px;
+            height: 40px;
+            background: var(--primary);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 16px;
+        }
+
+        .step-title {
+            font-weight: 700;
+            font-size: 16px;
+            color: var(--primary);
+            margin-bottom: 8px;
+        }
+
+        /* Table */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 16px 0;
+            font-size: 14px;
+        }
+
+        .data-table th {
+            background: var(--primary);
+            color: white;
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+        }
+
+        .data-table td {
+            padding: 12px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .data-table tr:nth-child(even) {
+            background: #fafafa;
+        }
+
+        .data-table .green-row { background: #e8f5e9 !important; }
+        .data-table .red-row { background: #ffebee !important; }
+        .data-table .blue-row { background: #e3f2fd !important; }
+
+        /* Formula box */
+        .formula-box {
+            background: #f3e5f5;
+            border: 1px solid #ce93d8;
+            border-radius: 8px;
+            padding: 12px 16px;
+            font-family: monospace;
+            font-size: 14px;
+            color: #4a148c;
+            margin: 8px 0;
+            display: inline-block;
+        }
+
+        /* Tips */
+        .tip-box {
+            background: #fff3e0;
+            border-left: 4px solid var(--gold);
+            padding: 16px 20px;
+            border-radius: 0 8px 8px 0;
+            margin: 16px 0;
+        }
+
+        .tip-box strong {
+            color: #e65100;
+        }
+
+        .warning-box {
+            background: #ffebee;
+            border-left: 4px solid var(--penalty);
+            padding: 16px 20px;
+            border-radius: 0 8px 8px 0;
+            margin: 16px 0;
+        }
+
+        .warning-box strong {
+            color: var(--penalty);
+        }
+
+        /* Level badges */
+        .level-badge {
+            display: inline-block;
+            padding: 6px 14px;
+            border-radius: 6px;
+            font-weight: 700;
+            font-size: 13px;
+        }
+
+        .level-excellent { background: #c8e6c9; color: #1b5e20; }
+        .level-medium { background: #fff9c4; color: #f57f17; }
+        .level-beginner { background: #ffcdd2; color: #b71c1c; }
+
+        /* Print button */
+        .print-btn {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 14px 24px;
+            border-radius: 50px;
+            font-family: inherit;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: 0 4px 16px rgba(21,101,192,0.4);
+            transition: all 0.3s;
+        }
+
+        .print-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(21,101,192,0.5);
+        }
+
+        @media print {
+            .print-btn { display: none; }
+            .card { break-inside: avoid; }
+        }
+
+        @media (max-width: 768px) {
+            .container { padding: 12px; }
+            .main-header { padding: 24px 16px; }
+            .main-header h1 { font-size: 20px; }
+            .card { padding: 18px; }
+            .step { padding-left: 50px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="main-header">
+            <h1>🎯 ແບບຟອມເກັບຄະແນນ - ໂຄງການ SIMPLE</h1>
+            <p>ບົດບາດ <strong>THE COACH</strong> | ລະບົບຄຳນວນອັດຕະໂນມັດດ້ວຍ Google Apps Script</p>
+            <span class="badge">📋 ເອກະສານຄູ່ມືການຕັ້ງຄ່າ</span>
+        </div>
+
+        <!-- Section 1: Script -->
+        <div class="card">
+            <div class="card-header">
+                <div class="card-icon" style="background: #e8eaf6;">⚙️</div>
+                <div class="card-title">1. ໂຄ້ດ Google Apps Script (Code.gs)</div>
+            </div>
+            <p style="margin-bottom: 16px;">ກອບໂຄ້ດນີ້ໄປວາງໃນ <strong>Extensions → Apps Script</strong> ໃນ Google Sheets:</p>
+
+            <div class="code-block">
+<span class="comment">/**
+ * ============================================
+ * ໂຄງການ SIMPLE - ແບບຟອມເກັບຄະແນນ THE COACH
+ * ============================================
+ */</span>
+
+<span class="keyword">function</span> <span class="function">createCoachScoringSheet</span>() {
+  <span class="keyword">var</span> ss = SpreadsheetApp.<span class="function">getActiveSpreadsheet</span>();
+  <span class="keyword">var</span> sheetName = <span class="string">"THE COACH - ເກັບຄະແນນ"</span>;
+
+  <span class="comment">// ລຶບ Sheet ເກົ່າຖ້າມີຊື່ຊ້ຳ</span>
+  <span class="keyword">var</span> existingSheet = ss.<span class="function">getSheetByName</span>(sheetName);
+  <span class="keyword">if</span> (existingSheet) {
+    ss.<span class="function">deleteSheet</span>(existingSheet);
+  }
+
+  <span class="keyword">var</span> sheet = ss.<span class="function">insertSheet</span>(sheetName);
+
+  <span class="comment">// ===== ຕັ້ງຄ່າຂະໜາດຖັນ =====</span>
+  sheet.<span class="function">setColumnWidth</span>(<span class="number">1</span>, <span class="number">320</span>);
+  sheet.<span class="function">setColumnWidth</span>(<span class="number">2</span>, <span class="number">110</span>);
+  sheet.<span class="function">setColumnWidth</span>(<span class="number">3</span>, <span class="number">130</span>);
+  sheet.<span class="function">setColumnWidth</span>(<span class="number">4</span>, <span class="number">130</span>);
+
+  <span class="comment">// ===== 1. ສ່ວນຫົວຂໍ້ (Rows 1-3) =====</span>
+  sheet.<span class="function">getRange</span>(<span class="string">"A1:D1"</span>).<span class="function">merge</span>()
+    .<span class="function">setValue</span>(<span class="string">"🎯 ແບບຟອມເກັບຄະແນນ - ໂຄງການ SIMPLE (THE COACH)"</span>)
+    .<span class="function">setFontSize</span>(<span class="number">16</span>)
+    .<span class="function">setFontWeight</span>(<span class="string">"bold"</span>)
+    .<span class="function">setHorizontalAlignment</span>(<span class="string">"center"</span>)
+    .<span class="function">setBackground</span>(<span class="string">"#1a237e"</span>)
+    .<span class="function">setFontColor</span>(<span class="string">"#ffffff"</span>);
+  sheet.<span class="function">setRowHeight</span>(<span class="number">1</span>, <span class="number">40</span>);
+
+  <span class="comment">// Row 2: ຂໍ້ມູນທົ່ວໄປ</span>
+  sheet.<span class="function">getRange</span>(<span class="string">"A2"</span>).<span class="function">setValue</span>(<span class="string">"👥 ຊື່ກຸ່ມ:"</span>).<span class="function">setFontWeight</span>(<span class="string">"bold"</span>);
+  sheet.<span class="function">getRange</span>(<span class="string">"B2"</span>).<span class="function">setValue</span>(<span class="string">""</span>).<span class="function">setBackground</span>(<span class="string">"#e3f2fd"</span>);
+
+  sheet.<span class="function">getRange</span>(<span class="string">"C2"</span>).<span class="function">setValue</span>(<span class="string">"🎮 ຮອບການຫຼິ້ນ:"</span>).<span class="function">setFontWeight</span>(<span class="string">"bold"</span>);
+  sheet.<span class="function">getRange</span>(<span class="string">"D2"</span>).<span class="function">setValue</span>(<span class="string">""</span>).<span class="function">setBackground</span>(<span class="string">"#e3f2fd"</span>);
+
+  <span class="comment">// Row 3: ສະມາຊິກ</span>
+  sheet.<span class="function">getRange</span>(<span class="string">"A3"</span>).<span class="function">setValue</span>(<span class="string">"📝 ລາຍຊື່ສະມາຊິກ:"</span>).<span class="function">setFontWeight</span>(<span class="string">"bold"</span>);
+  sheet.<span class="function">getRange</span>(<span class="string">"B3:D3"</span>).<span class="function">merge</span>()
+    .<span class="function">setValue</span>(<span class="string">""</span>).<span class="function">setBackground</span>(<span class="string">"#e3f2fd"</span>)
+    .<span class="function">setWrap</span>(<span class="keyword">true</span>);
+  sheet.<span class="function">setRowHeight</span>(<span class="number">3</span>, <span class="number">30</span>);
+
+  <span class="comment">// ===== 2. ສ່ວນຄະແນນດ້ານບວກ (HERO SCORE) =====</span>
+  sheet.<span class="function">getRange</span>(<span class="string">"A5:D5"</span>).<span class="function">merge</span>()
+    .<span class="function">setValue</span>(<span class="string">"🦸 ຄະແນນດ້ານບວກ (HERO SCORE)"</span>)
+    .<span class="function">setFontSize</span>(<span class="number">13</span>).<span class="function">setFontWeight</span>(<span class="string">"bold"</span>)
+    .<span class="function">setHorizontalAlignment</span>(<span class="string">"center"</span>)
+    .<span class="function">setBackground</span>(<span class="string">"#2e7d32"</span>).<span class="function">setFontColor</span>(<span class="string">"#ffffff"</span>);
+  sheet.<span class="function">setRowHeight</span>(<span class="number">5</span>, <span class="number">32</span>);
+
+  <span class="comment">// Headers</span>
+  <span class="keyword">var</span> headers = [<span class="string">"ກິດຈະກໍາ / ພາລະກິດ"</span>, <span class="string">"ຄະແນນ"</span>, <span class="string">"ຈຳນວນຄັ້ງ"</span>, <span class="string">"ຄະແນນລວມ"</span>];
+  sheet.<span class="function">getRange</span>(<span class="string">"A6:D6"</span>).<span class="function">setValues</span>([headers])
+    .<span class="function">setFontWeight</span>(<span class="string">"bold"</span>).<span class="function">setBackground</span>(<span class="string">"#c8e6c9"</span>)
+    .<span class="function">setFontColor</span>(<span class="string">"#1b5e20"</span>);
+
+  <span class="comment">// Row 7: ເກັບຕົວຢ່າງ (+100)</span>
+  sheet.<span class="function">getRange</span>(<span class="string">"A7"</span>).<span class="function">setValue</span>(<span class="string">"🔬 ເກັບຕົວຢ່າງວິທະຍາສາດຖືກຕ້ອງ"</span>);
+  sheet.<span class="function">getRange</span>(<span class="string">"B7"</span>).<span class="function">setValue</span>(<span class="number">100</span>).<span class="function">setHorizontalAlignment</span>(<span class="string">"center"</span>);
+  sheet.<span class="function">getRange</span>(<span class="string">"C7"</span>).<span class="function">setValue</span>(<span class="string">""</span>).<span class="function">setBackground</span>(<span class="string">"#fff9c4"</span>).<span class="function">setHorizontalAlignment</span>(<span class="string">"center"</span>);
+  sheet.<span class="function">getRange</span>(<span class="string">"D7"</span>).<span class="function">setFormula</span>(<span class="string">"=B7*C7"</span>).<span class="function">setFontWeight</span>(<span class="string">"bold"</span>);
+
+  <span class="comment">// Row 8: ຊ່ວຍຄົນເຈັບ (+50)</span>
+  sheet.<span class="function">getRange</span>(<span class="string">"A8"</span>).<span class="function">setValue</span>(<span class="string">"🚑 ຊ່ວຍເຫຼືອຄົນເຈັບທັນເວລາ"</span>);
+  sheet.<span class="function">getRange</span>(<span class="string">"B8"</span>).<span class="function">setValue</span>(<span class="number">50</span>).<span class="function">setHorizontalAlignment</span>(<span class="string">"center"</span>);
+  sheet.<span class="function">getRange</span>(<span class="string">"C8"</span>).<span class="function">setValue</span>(<span class="string">""</span>).<span class="function">setBackground</span>(<span class="string">"#fff9c4"</span>).<span class="function">setHorizontalAlignment</span>(<span class="string">"center"</span>);
+  sheet.<span class="function">getRange</span>(<span class="string">"D8"</span>).<span class="function">setFormula</span>(<span class="string">"=B8*C8"</span>).<span class="function">setFontWeight</span>(<span class="string">"bold"</span>);
+
+  <span class="comment">// Row 9: ໂບນັດ O2 (+200, 1/0)</span>
+  sheet.<span class="function">getRange</span>(<span class="string">"A9"</span>).<span class="function">setValue</span>(<span class="string">"💨 ໂບນັດອອກຊີເຈນເຫຼືອ >50%"</span>);
+  sheet.<span class="function">getRange</span>(<span class="string">"B9"</span>).<span class="function">setValue</span>(<span class="number">200</span>).<span class="function">setHorizontalAlignment</span>(<span class="string">"center"</span>);
+  sheet.<span class="function">getRange</span>(<span class="string">"C9"</span>).<span class="function">setValue</span>(<span class="string">""</span>).<span class="function">setBackground</span>(<span class="string">"#fff9c4"</span>).<span class="function">setHorizontalAlignment</span>(<span class="string">"center"</span>);
+
+  <span class="comment">// Data validation: ໃສ່ໄດ້ສະເພາະ 0 ຫຼື 1</span>
+  <span class="keyword">var</span> ruleO2 = SpreadsheetApp.<span class="function">newDataValidation</span>()
+    .<span class="function">requireNumberBetween</span>(<span class="number">0</span>, <span class="number">1</span>)
+    .<span class="function">setAllowInvalid</span>(<span class="keyword">false</span>)
+    .<span class="function">setHelpText</span>(<span class="string">"ກະລຸນາໃສ່ 0 ຫຼື 1 ເທົ່ານັ້ນ"</span>)
+    .<span class="function">build</span>();
+  sheet.<span class="function">getRange</span>(<span class="string">"C9"</span>).<span class="function">setDataValidation</span>(ruleO2);
+  sheet.<span class="function">getRange</span>(<span class="string">"D9"</span>).<span class="function">setFormula</span>(<span class="string">"=B9*C9"</span>).<span class="function">setFontWeight</span>(<span class="string">"bold"</span>);
+
+  <span class="comment">// Row 10: ລວມຄະແນນສີຂຽວ</span>
+  sheet.<span class="function">getRange</span>(<span class="string">"A10:C10"</span>).<span class="function">merge</span>().<span class="function">setValue</span>(<span class="string">"📗 ລວມຄະແນນດ້ານບວກທັງໝົດ"</span>)
+    .<span class="function">setFontWeight</span>(<span class="string">"bold"</span>).<span class="function">setHorizontalAlignment</span>(<span class="string">"right"</span>)
+    .<span class="function">setFontColor</span>(<span class="string">"#1b5e20"</span>);
+  sheet.<span class="function">getRange</span>(<span class="string">"D10"</span>).<span class="function">setFormula</span>(<span class="string">"=SUM(D7:D9)"</span>)
+    .<span class="function">setFontWeight</span>(<span class="string">"bold"</span>).<span class="function">setFontSize</span>(<span class="number">12</span>)
+    .<span class="function">setBackground</span>(<span class="string">"#66bb6a"</span>).<span class="function">setFontColor</span>(<span class="string">"#ffffff"</span>);
+
+  <span class="comment">// ===== 3. ສ່ວນຄະແນນດ້ານລົບ (PENALTY) =====</span>
+  sheet.<span class="function">getRange</span>(<span class="string">"A12:D12"</span>).<span class="function">merge</span>()
+    .<span class="function">setValue</span>(<span class="string">"⚠️ ຄະແນນດ້ານລົບ (PENALTY SCORE)"</span>)
+    .<span class="function">setFontSize</span>(<span class="number">13</span>).<span class="function">setFontWeight</span>(<span class="string">"bold"</span>)
+    .<span class="function">setHorizontalAlignment</span>(<span class="string">"center"</span>)
+    .<span class="function">setBackground</span>(<span class="string">"#c62828"</span>).<span class="function">setFontColor</span>(<span class="string">"#ffffff"</span>);
+  sheet.<span class="function">setRowHeight</span>(<span class="number">12</span>, <span class="number">32</span>);
+
+  sheet.<span class="function">getRange</span>(<span class="string">"A13:D13"</span>).<span class="function">setValues</span>([headers])
+    .<span class="function">setFontWeight</span>(<span class="string">"bold"</span>).<span class="function">setBackground</span>(<span class="string">"#ffcdd2"</span>)
+    .<span class="function">setFontColor</span>(<span class="string">"#b71c1c"</span>);
+
+  <span class="comment">// Row 14: ເຊື້ອແຜ່ລະບາດ (-80)</span>
+  sheet.<span class="function">getRange</span>(<span class="string">"A14"</span>).<span class="function">setValue</span>(<span class="string">"🛡️ ປ້ອງກັນຜິດພາດ / ເຊື້ອແຜ່ລະບາດ"</span>);
+  sheet.<span class="function">getRange</span>(<span class="string">"B14"</span>).<span class="function">setValue</span>(<span class="number">80</span>).<span class="function">setHorizontalAlignment</span>(<span class="string">"center"</span>);
+  sheet.<span class="function">getRange</span>(<span class="string">"C14"</span>).<span class="function">setValue</span>(<span class="string">""</span>).<span class="function">setBackground</span>(<span class="string">"#fff9c4"</span>).<span class="function">setHorizontalAlignment</span>(<span class="string">"center"</span>);
+  sheet.<span class="function">getRange</span>(<span class="string">"D14"</span>).<span class="function">setFormula</span>(<span class="string">"=B14*C14"</span>).<span class="function">setFontWeight</span>(<span class="string">"bold"</span>);
+
+  <span class="comment">// Row 15: ວິນິດໄສຜິດ (-150)</span>
+  sheet.<span class="function">getRange</span>(<span class="string">"A15"</span>).<span class="function">setValue</span>(<span class="string">"❌ ວິນິດໄສຜິດ / ສົ່ງຂໍ້ມູນຜິດ"</span>);
+  sheet.<span class="function">getRange</span>(<span class="string">"B15"</span>).<span class="function">setValue</span>(<span class="number">150</span>).<span class="function">setHorizontalAlignment</span>(<span class="string">"center"</span>);
+  sheet.<span class="function">getRange</span>(<span class="string">"C15"</span>).<span class="function">setValue</span>(<span class="string">""</span>).<span class="function">setBackground</span>(<span class="string">"#fff9c4"</span>).<span class="function">setHorizontalAlignment</span>(<span class="string">"center"</span>);
+  sheet.<span class="function">getRange</span>(<span class="string">"D15"</span>).<span class="function">setFormula</span>(<span class="string">"=B15*C15"</span>).<span class="function">setFontWeight</span>(<span class="string">"bold"</span>);
+
+  <span class="comment">// Row 16: ລວມຄະແນນສີແດງ</span>
+  sheet.<span class="function">getRange</span>(<span class="string">"A16:C16"</span>).<span class="function">merge</span>().<span class="function">setValue</span>(<span class="string">"📕 ລວມຄະແນນດ້ານລົບທັງໝົດ"</span>)
+    .<span class="function">setFontWeight</span>(<span class="string">"bold"</span>).<span class="function">setHorizontalAlignment</span>(<span class="string">"right"</span>)
+    .<span class="function">setFontColor</span>(<span class="string">"#b71c1c"</span>);
+  sheet.<span class="function">getRange</span>(<span class="string">"D16"</span>).<span class="function">setFormula</span>(<span class="string">"=SUM(D14:D15)"</span>)
+    .<span class="function">setFontWeight</span>(<span class="string">"bold"</span>).<span class="function">setFontSize</span>(<span class="number">12</span>)
+    .<span class="function">setBackground</span>(<span class="string">"#ef5350"</span>).<span class="function">setFontColor</span>(<span class="string">"#ffffff"</span>);
+
+  <span class="comment">// ===== 4. ສະຫຼຸບຜົນ =====</span>
+  sheet.<span class="function">getRange</span>(<span class="string">"A18:D18"</span>).<span class="function">merge</span>()
+    .<span class="function">setValue</span>(<span class="string">"📊 ສະຫຼຸບຜົນສຸດທ້າຍ"</span>)
+    .<span class="function">setFontSize</span>(<span class="number">13</span>).<span class="function">setFontWeight</span>(<span class="string">"bold"</span>)
+    .<span class="function">setHorizontalAlignment</span>(<span class="string">"center"</span>)
+    .<span class="function">setBackground</span>(<span class="string">"#1565c0"</span>).<span class="function">setFontColor</span>(<span class="string">"#ffffff"</span>);
+
+  sheet.<span class="function">getRange</span>(<span class="string">"A19:C19"</span>).<span class="function">merge</span>().<span class="function">setValue</span>(<span class="string">"🏆 ຄະແນນສຸດທ້າຍ"</span>)
+    .<span class="function">setFontWeight</span>(<span class="string">"bold"</span>).<span class="function">setHorizontalAlignment</span>(<span class="string">"right"</span>)
+    .<span class="function">setBackground</span>(<span class="string">"#e3f2fd"</span>);
+  sheet.<span class="function">getRange</span>(<span class="string">"D19"</span>).<span class="function">setFormula</span>(<span class="string">"=D10-D16"</span>)
+    .<span class="function">setFontWeight</span>(<span class="string">"bold"</span>).<span class="function">setFontSize</span>(<span class="number">14</span>)
+    .<span class="function">setBackground</span>(<span class="string">"#1976d2"</span>).<span class="function">setFontColor</span>(<span class="string">"#ffffff"</span>);
+
+  sheet.<span class="function">getRange</span>(<span class="string">"A20:C20"</span>).<span class="function">merge</span>().<span class="function">setValue</span>(<span class="string">"📋 ລະດັບການປະເມີນ"</span>)
+    .<span class="function">setFontWeight</span>(<span class="string">"bold"</span>).<span class="function">setHorizontalAlignment</span>(<span class="string">"right"</span>)
+    .<span class="function">setBackground</span>(<span class="string">"#e3f2fd"</span>);
+  sheet.<span class="function">getRange</span>(<span class="string">"D20"</span>).<span class="function">setFormula</span>(<span class="string">'=IF(D19>=500,"🟢 ລະດັບ ທຸດຊຸມຊົນ (ດີເລີດ)",IF(D19>=250,"🟡 ລະດັບ ຜູ້ປ້ອງກັນ (ປານກາງ)","🔴 ລະດັບ ມືໃໝ່ (ຕ້ອງປັບປຸງ)"))'</span>)
+    .<span class="function">setFontWeight</span>(<span class="string">"bold"</span>).<span class="function">setFontSize</span>(<span class="number">12</span>)
+    .<span class="function">setBackground</span>(<span class="string">"#90caf9"</span>);
+
+  <span class="comment">// ===== 5. ຂອບ + ຟ້ອນ + ປ້ອງກັນສູດ =====</span>
+  <span class="keyword">var</span> allDataRange = sheet.<span class="function">getRange</span>(<span class="string">"A1:D20"</span>);
+  allDataRange.<span class="function">setBorder</span>(<span class="keyword">true</span>, <span class="keyword">true</span>, <span class="keyword">true</span>, <span class="keyword">true</span>, <span class="keyword">true</span>, <span class="keyword">true</span>, <span class="string">"#000000"</span>, SpreadsheetApp.BorderStyle.SOLID);
+  allDataRange.<span class="function">setFontFamily</span>(<span class="string">"Arial"</span>);
+  allDataRange.<span class="function">setFontSize</span>(<span class="number">11</span>);
+  allDataRange.<span class="function">setVerticalAlignment</span>(<span class="string">"middle"</span>);
+
+  <span class="comment">// ===== 6. Conditional Formatting =====</span>
+  <span class="keyword">var</span> rangeD20 = sheet.<span class="function">getRange</span>(<span class="string">"D20"</span>);
+  <span class="keyword">var</span> rules = [];
+
+  <span class="keyword">var</span> rule1 = SpreadsheetApp.<span class="function">newConditionalFormatRule</span>()
+    .<span class="function">whenTextContains</span>(<span class="string">"ທຸດຊຸມຊົນ"</span>)
+    .<span class="function">setBackground</span>(<span class="string">"#c8e6c9"</span>).<span class="function">setFontColor</span>(<span class="string">"#1b5e20"</span>)
+    .<span class="function">setRanges</span>([rangeD20]).<span class="function">build</span>();
+  rules.<span class="function">push</span>(rule1);
+
+  <span class="keyword">var</span> rule2 = SpreadsheetApp.<span class="function">newConditionalFormatRule</span>()
+    .<span class="function">whenTextContains</span>(<span class="string">"ຜູ້ປ້ອງກັນ"</span>)
+    .<span class="function">setBackground</span>(<span class="string">"#fff9c4"</span>).<span class="function">setFontColor</span>(<span class="string">"#f57f17"</span>)
+    .<span class="function">setRanges</span>([rangeD20]).<span class="function">build</span>();
+  rules.<span class="function">push</span>(rule2);
+
+  <span class="keyword">var</span> rule3 = SpreadsheetApp.<span class="function">newConditionalFormatRule</span>()
+    .<span class="function">whenTextContains</span>(<span class="string">"ມືໃໝ່"</span>)
+    .<span class="function">setBackground</span>(<span class="string">"#ffcdd2"</span>).<span class="function">setFontColor</span>(<span class="string">"#b71c1c"</span>)
+    .<span class="function">setRanges</span>([rangeD20]).<span class="function">build</span>();
+  rules.<span class="function">push</span>(rule3);
+
+  sheet.<span class="function">setConditionalFormatRules</span>(rules);
+
+  <span class="comment">// ===== 7. ປ້ອງກັນສູດ =====</span>
+  <span class="keyword">var</span> formulaRanges = [<span class="string">"D7:D10"</span>, <span class="string">"D14:D16"</span>, <span class="string">"D19:D20"</span>];
+  formulaRanges.<span class="function">forEach</span>(<span class="keyword">function</span>(rangeNotation) {
+    <span class="keyword">var</span> range = sheet.<span class="function">getRange</span>(rangeNotation);
+    <span class="keyword">var</span> protection = range.<span class="function">protect</span>().<span class="function">setDescription</span>(<span class="string">"ປ້ອງກັນສູດຄຳນວນ"</span>);
+    <span class="keyword">var</span> editors = protection.<span class="function">getEditors</span>();
+    editors.<span class="function">forEach</span>(<span class="keyword">function</span>(editor) {
+      protection.<span class="function">removeEditor</span>(editor);
+    });
+  });
+
+  <span class="comment">// ===== 8. ແຈ້ງເຕືອນ =====</span>
+  SpreadsheetApp.<span class="function">getUi</span>().<span class="function">alert</span>(
+    <span class="string">"✅ ສຳເລັດແລ້ວ!"</span>, 
+    <span class="string">"ແບບຟອມເກັບຄະແນນ THE COACH ຖືກສ້າງໃນ Sheet: '"</span> + sheetName + <span class="string">"'"</span>, 
+    SpreadsheetApp.getUi().ButtonSet.OK
+  );
+}
+            </div>
+
+            <div class="tip-box">
+                <strong>💡 ຄຳແນະນຳ:</strong> ກອບໂຄ້ດທັງໝົດນີ້ໄປວາງໃນ Apps Script ແລ້ວກົດ Run (▶️) ຄັ້ງດຽວ ແບບຟອມຈະສ້າງອັດຕະໂນມັດ!
+            </div>
+        </div>
+
+        <!-- Section 2: Manual Guide -->
+        <div class="card section-guide">
+            <div class="card-header">
+                <div class="card-icon">📖</div>
+                <div class="card-title">2. ຄູ່ມືການຕັ້ງຄ່າ (Manual Guide)</div>
+            </div>
+
+            <div class="steps">
+                <div class="step">
+                    <div class="step-title">ເປີດ Google Apps Script</div>
+                    <p>ເປີດ <strong>Google Sheets</strong> ໃໝ່ → ໄປທີ່ <strong>Extensions</strong> → <strong>Apps Script</strong></p>
+                    <p>ລຶບໂຄ້ດ <code>function myFunction()</code> ທີ່ມີຢູ່ ແລ້ວວາງໂຄ້ດຂ້າງເທິງນີ້ເຂົ້າໄປ</p>
+                </div>
+
+                <div class="step">
+                    <div class="step-title">ບັນທຶກ ແລະ ຣັນ Script</div>
+                    <p>ກົດ <strong>Save</strong> (💾) ແລ້ວຕັ້ງຊື່ໂປຣເຈັກເປັນ <code>SIMPLE_Coach_Scoring</code></p>
+                    <p>ເລືອກຟັງຊັນ <code>createCoachScoringSheet</code> ໃນຮູບລັກ🔽 ແລ້ວກົດ <strong>Run</strong> (▶️)</p>
+                    <p>ອະນຸຍາດ Permission ຄັ້ງທຳອິດ (ກົດ <em>Review Permissions</em> → <em>Allow</em>)</p>
+                </div>
+
+                <div class="step">
+                    <div class="step-title">ປ້ອນຂໍ້ມູນເຂົ້າໃຊ້ງານ</div>
+                    <table class="data-table">
+                        <tr>
+                            <th>ຊ່ອງ (Cell)</th>
+                            <th>ຂໍ້ມູນທີ່ຕ້ອງປ້ອນ</th>
+                            <th>ຕົວຢ່າງ</th>
+                        </tr>
+                        <tr>
+                            <td><strong>B2</strong></td>
+                            <td>ຊື່ກຸ່ມ</td>
+                            <td>ກຸ່ມ A1</td>
+                        </tr>
+                        <tr>
+                            <td><strong>D2</strong></td>
+                            <td>ຮອບການຫຼິ້ນ</td>
+                            <td>ຮອບທີ 1</td>
+                        </tr>
+                        <tr>
+                            <td><strong>B3</strong></td>
+                            <td>ລາຍຊື່ສະມາຊິກ</td>
+                            <td>ສົມຊາຍ, ສົມຫຍິງ</td>
+                        </tr>
+                        <tr class="green-row">
+                            <td><strong>C7</strong></td>
+                            <td>ຈຳນວນຄັ້ງເກັບຕົວຢ່າງ</td>
+                            <td>5</td>
+                        </tr>
+                        <tr class="green-row">
+                            <td><strong>C8</strong></td>
+                            <td>ຈຳນວນຄົນເຈັບທີ່ຊ່ວຍ</td>
+                            <td>3</td>
+                        </tr>
+                        <tr class="green-row">
+                            <td><strong>C9</strong></td>
+                            <td>O2 >50% (ໃສ່ <strong>1</strong> ຖ້າໄດ້, <strong>0</strong> ຖ້າບໍ່ໄດ້)</td>
+                            <td>1</td>
+                        </tr>
+                        <tr class="red-row">
+                            <td><strong>C14</strong></td>
+                            <td>ຈຳນວນຄັ້ງເຊື້ອແຜ່ລະບາດ</td>
+                            <td>2</td>
+                        </tr>
+                        <tr class="red-row">
+                            <td><strong>C15</strong></td>
+                            <td>ຈຳນວນຄັ້ງວິນິດໄສຜິດ</td>
+                            <td>1</td>
+                        </tr>
+                    </table>
+                </div>
+
+                <div class="step">
+                    <div class="step-title">ກວດສອບສູດຄຳນວນ</div>
+                    <p>ຄະແນນຈະຄຳນວນອັດຕະໂນມັດຕາມສູດນີ້:</p>
+                    <div class="formula-box">=B7*C7</div> (ເກັບຕົວຢ່າງ)<br>
+                    <div class="formula-box">=B8*C8</div> (ຊ່ວຍຄົນເຈັບ)<br>
+                    <div class="formula-box">=B9*C9</div> (ໂບນັດ O2)<br>
+                    <div class="formula-box">=SUM(D7:D9)</div> (ລວມຂຽວ)<br>
+                    <div class="formula-box">=SUM(D14:D15)</div> (ລວມແດງ)<br>
+                    <div class="formula-box">=D10-D16</div> (ຄະແນນສຸດທ້າຍ)<br>
+                    <div class="formula-box">=IF(D19>=500,"🟢...",IF(D19>=250,"🟡...","🔴..."))</div> (ລະດັບ)
+                </div>
+
+                <div class="step">
+                    <div class="step-title">ຕັ້ງຄ່າ Conditional Formatting (ສີປ່ຽນອັດຕະໂນມັດ)</div>
+                    <p>ຄລິກຂວາໃສ່ຫ້ອງ <strong>D20</strong> → ເລືອກ <strong>Conditional formatting</strong></p>
+                    <table class="data-table">
+                        <tr>
+                            <th>ເງື່ອນໄຂ</th>
+                            <th>ສີພື້ນຫຼັງ</th>
+                            <th>ຄຳອະທິບາຍ</th>
+                        </tr>
+                        <tr class="green-row">
+                            <td>Text contains "ທຸດຊຸມຊົນ"</td>
+                            <td>🟢 ຂຽວອ່ອນ (#c8e6c9)</td>
+                            <td>ດີເລີດ (>=500 ຄະແນນ)</td>
+                        </tr>
+                        <tr>
+                            <td>Text contains "ຜູ້ປ້ອງກັນ"</td>
+                            <td>🟡 ເຫຼືອງອ່ອນ (#fff9c4)</td>
+                            <td>ປານກາງ (>=250 ຄະແນນ)</td>
+                        </tr>
+                        <tr class="red-row">
+                            <td>Text contains "ມືໃໝ່"</td>
+                            <td>🔴 ແດງອ່ອນ (#ffcdd2)</td>
+                            <td>ຕ້ອງປັບປຸງ (<250 ຄະແນນ)</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+
+            <div class="warning-box">
+                <strong>⚠️ ຂໍ້ຄວນລະວັງ:</strong> ຫ້າມແກ້ໄຂຊ່ອງສີຂາວ (D7, D8, D9, D10, D14, D15, D16, D19, D20) ເພາະເປັນສູດຄຳນວນທີ່ລັອກໄວ້ເພື່ອປ້ອງກັນການລົບຜິດ!
+            </div>
+        </div>
+
+        <!-- Section 3: Structure Table -->
+        <div class="card section-summary">
+            <div class="card-header">
+                <div class="card-icon">📊</div>
+                <div class="card-title">3. ໂຄງສ້າງຕາຕະລາງສະຫຼຸບ</div>
+            </div>
+
+            <table class="data-table">
+                <tr>
+                    <th>ແຖວ</th>
+                    <th>A (ກິດຈະກໍາ)</th>
+                    <th>B (ຄະແນນ)</th>
+                    <th>C (ປ້ອນ)</th>
+                    <th>D (ລວມ)</th>
+                </tr>
+                <tr class="blue-row">
+                    <td><strong>1</strong></td>
+                    <td colspan="4"><strong>🎯 ແບບຟອມເກັບຄະແນນ - THE COACH</strong></td>
+                </tr>
+                <tr>
+                    <td>2</td>
+                    <td>👥 ຊື່ກຸ່ມ:</td>
+                    <td style="background:#e3f2fd">[ປ້ອນ]</td>
+                    <td>🎮 ຮອບການຫຼິ້ນ:</td>
+                    <td style="background:#e3f2fd">[ປ້ອນ]</td>
+                </tr>
+                <tr>
+                    <td>3</td>
+                    <td>📝 ສະມາຊິກ:</td>
+                    <td colspan="3" style="background:#e3f2fd">[ປ້ອນ]</td>
+                </tr>
+                <tr class="green-row">
+                    <td><strong>5</strong></td>
+                    <td colspan="4"><strong>🦸 HERO SCORE (ຄະແນນດ້ານບວກ)</strong></td>
+                </tr>
+                <tr>
+                    <td>6</td>
+                    <th>ກິດຈະກໍາ</th>
+                    <th>ຄະແນນ</th>
+                    <th>ຈຳນວນ</th>
+                    <th>ລວມ</th>
+                </tr>
+                <tr>
+                    <td>7</td>
+                    <td>🔬 ເກັບຕົວຢ່າງວິທະຍາສາດ</td>
+                    <td>100</td>
+                    <td style="background:#fff9c4">?</td>
+                    <td><strong>=B7×C7</strong></td>
+                </tr>
+                <tr>
+                    <td>8</td>
+                    <td>🚑 ຊ່ວຍຄົນເຈັບທັນເວລາ</td>
+                    <td>50</td>
+                    <td style="background:#fff9c4">?</td>
+                    <td><strong>=B8×C8</strong></td>
+                </tr>
+                <tr>
+                    <td>9</td>
+                    <td>💨 ໂບນັດ O2 >50%</td>
+                    <td>200</td>
+                    <td style="background:#fff9c4">0/1</td>
+                    <td><strong>=B9×C9</strong></td>
+                </tr>
+                <tr class="green-row">
+                    <td><strong>10</strong></td>
+                    <td colspan="3"><strong>📗 ລວມຄະແນນຂຽວ</strong></td>
+                    <td><strong>=SUM(D7:D9)</strong></td>
+                </tr>
+                <tr class="red-row">
+                    <td><strong>12</strong></td>
+                    <td colspan="4"><strong>⚠️ PENALTY SCORE (ຄະແນນດ້ານລົບ)</strong></td>
+                </tr>
+                <tr>
+                    <td>13</td>
+                    <th>ກິດຈະກໍາ</th>
+                    <th>ຄະແນນ</th>
+                    <th>ຈຳນວນ</th>
+                    <th>ລວມ</th>
+                </tr>
+                <tr>
+                    <td>14</td>
+                    <td>🛡️ ເຊື້ອແຜ່ລະບາດ</td>
+                    <td>80</td>
+                    <td style="background:#fff9c4">?</td>
+                    <td><strong>=B14×C14</strong></td>
+                </tr>
+                <tr>
+                    <td>15</td>
+                    <td>❌ ວິນິດໄສຜິດ</td>
+                    <td>150</td>
+                    <td style="background:#fff9c4">?</td>
+                    <td><strong>=B15×C15</strong></td>
+                </tr>
+                <tr class="red-row">
+                    <td><strong>16</strong></td>
+                    <td colspan="3"><strong>📕 ລວມຄະແນນແດງ</strong></td>
+                    <td><strong>=SUM(D14:D15)</strong></td>
+                </tr>
+                <tr class="blue-row">
+                    <td><strong>18</strong></td>
+                    <td colspan="4"><strong>📊 ສະຫຼຸບຜົນສຸດທ້າຍ</strong></td>
+                </tr>
+                <tr class="blue-row">
+                    <td><strong>19</strong></td>
+                    <td colspan="3"><strong>🏆 ຄະແນນສຸດທ້າຍ</strong></td>
+                    <td><strong>=D10−D16</strong></td>
+                </tr>
+                <tr class="blue-row">
+                    <td><strong>20</strong></td>
+                    <td colspan="3"><strong>📋 ລະດັບການປະເມີນ</strong></td>
+                    <td><strong>=IF(≥500,"🟢",IF(≥250,"🟡","🔴"))</strong></td>
+                </tr>
+            </table>
+        </div>
+
+        <!-- Section 4: Levels -->
+        <div class="card">
+            <div class="card-header">
+                <div class="card-icon" style="background: #f3e5f5;">🏆</div>
+                <div class="card-title">4. ເງື່ອນໄຂລະດັບການປະເມີນ</div>
+            </div>
+
+            <table class="data-table">
+                <tr>
+                    <th>ລະດັບ</th>
+                    <th>ເງື່ອນໄຂຄະແນນ</th>
+                    <th>ຄຳອະທິບາຍ</th>
+                    <th>ສີ</th>
+                </tr>
+                <tr class="green-row">
+                    <td><span class="level-badge level-excellent">🟢 ທຸດຊຸມຊົນ</span></td>
+                    <td><strong>>= 500 ຄະແນນ</strong></td>
+                    <td>ດີເລີດ - ສົມບູນແບບ</td>
+                    <td>ຂຽວອ່ອນ</td>
+                </tr>
+                <tr>
+                    <td><span class="level-badge level-medium">🟡 ຜູ້ປ້ອງກັນ</span></td>
+                    <td><strong>>= 250 ຄະແນນ</strong></td>
+                    <td>ປານກາງ - ຍັງມີຈຸດປັບປຸງ</td>
+                    <td>ເຫຼືອງອ່ອນ</td>
+                </tr>
+                <tr class="red-row">
+                    <td><span class="level-badge level-beginner">🔴 ມືໃໝ່</span></td>
+                    <td><strong>< 250 ຄະແນນ</strong></td>
+                    <td>ຕ້ອງປັບປຸງ - ຝຶກຝົນຕໍ່</td>
+                    <td>ແດງອ່ອນ</td>
+                </tr>
+            </table>
+        </div>
+
+        <!-- Section 5: Tips -->
+        <div class="card">
+            <div class="card-header">
+                <div class="card-icon" style="background: #e8f5e9;">💡</div>
+                <div class="card-title">5. ຄຳແນະນຳເພີ່ມເຕີມ</div>
+            </div>
+
+            <ul style="margin-left: 20px; line-height: 2;">
+                <li><strong>ຟ້ອນພາສາລາວ:</strong> ຖ້າຕົວອັກສອນລາວບໍ່ສະແດງສົມບູນ, ໄປທີ່ Format → Font → ເລືອກ <strong>"Noto Sans Lao"</strong> ຫຼື <strong>"Phetsarath OT"</strong></li>
+                <li><strong>ສຳເນົາໃຫ້ນັກຮຽນ:</strong> ໃຊ້ <strong>File → Make a copy</strong> ແລ້ວແຈກຈ່າຍ Link ໃຫ້ແຕ່ລະກຸ່ມ</li>
+                <li><strong>ເກັບປະຫວັດ:</strong> ເມື່ອຈົບແຕ່ລະຮອບ, ກົດ <strong>File → Version history → Name current version</strong> ເພື່ອເກັບຄະແນນແຕ່ລະຮອບ</li>
+                <li><strong>ຫຼາຍກຸ່ມ:</strong> ກົດຂວາທີ່ Sheet tab → <strong>Duplicate</strong> → ປ່ຽນຊື່ກຸ່ມໃນ B2</li>
+                <li><strong>ແຈ້ງເຕືອນ:</strong> ເມື່ອຄະແນນຕໍ່າກວ່າ 250, ສີແດງຈະປາກົດເພື່ອເຕືອນ Coach ໃຫ້ຊ່ວຍເຫຼືອນັກຮຽນ</li>
+            </ul>
+
+            <div class="tip-box" style="margin-top: 20px;">
+                <strong>🎯 ສຳລັບຫຼາຍກຸ່ມໃນ Sheet ດຽວ:</strong> ຖ້າຕ້ອງການໃຫ້ຫຼາຍກຸ່ມປ້ອນພ້ອມກັນໃນ Sheet ດຽວ, ຂ້ອຍສາມາດຂຽນເວີຊັນຂະຫຍາຍທີ່ມີຫຼາຍກຸ່ມໃນ Sheet ດຽວໄດ້!
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div style="text-align: center; padding: 30px; color: #78909c; font-size: 13px;">
+            <p>📝 ແບບຟອມເກັບຄະແນນ THE COACH | ໂຄງການ SIMPLE</p>
+            <p>ສ້າງດ້ວຍ Google Apps Script | ອອກແບບສຳລັບການສອນໃນຫ້ອງຮຽນ</p>
+        </div>
+    </div>
+
+    <button class="print-btn" onclick="window.print()">🖨️ ພິມເອກະສານນີ້</button>
+</body>
+</html>
