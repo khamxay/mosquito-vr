@@ -695,10 +695,10 @@
             const speed = 0.12;
             let dx = 0, dz = 0;
 
-            if (keys['w'] || keys['arrowup']) { dx += Math.sin(player.rotY) * speed; dz += Math.cos(player.rotY) * speed; }
-            if (keys['s'] || keys['arrowdown']) { dx -= Math.sin(player.rotY) * speed; dz -= Math.cos(player.rotY) * speed; }
-            if (keys['a'] || keys['arrowleft']) { dx += Math.sin(player.rotY + Math.PI/2) * speed; dz += Math.cos(player.rotY + Math.PI/2) * speed; }
-            if (keys['d'] || keys['arrowright']) { dx += Math.sin(player.rotY - Math.PI/2) * speed; dz += Math.cos(player.rotY - Math.PI/2) * speed; }
+            if (keys['s'] || keys['arrowup']) { dx += Math.sin(player.rotY) * speed; dz += Math.cos(player.rotY) * speed; }
+            if (keys['w'] || keys['arrowdown']) { dx -= Math.sin(player.rotY) * speed; dz -= Math.cos(player.rotY) * speed; }
+            if (keys['d'] || keys['arrowleft']) { dx += Math.sin(player.rotY + Math.PI/2) * speed; dz += Math.cos(player.rotY + Math.PI/2) * speed; }
+            if (keys['a'] || keys['arrowright']) { dx += Math.sin(player.rotY - Math.PI/2) * speed; dz += Math.cos(player.rotY - Math.PI/2) * speed; }
 
             const newX = player.x + dx;
             const newZ = player.z + dz;
