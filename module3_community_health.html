@@ -1,0 +1,1206 @@
+<!DOCTYPE html>
+<html lang="lo">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ໂມດູນ 3: ຜູ້ນຳດ້ານສຸຂະພາບໃນຊຸມຊົນ - 3D Interactive</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Lao:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Noto Sans Lao', sans-serif; overflow: hidden; margin: 0; background: #1a1a2e; }
+        #canvas-container { width: 100vw; height: 100vh; position: fixed; top: 0; left: 0; }
+        .ui-layer { position: fixed; z-index: 10; pointer-events: none; }
+        .ui-layer > * { pointer-events: auto; }
+        .hud-panel { background: rgba(0,0,0,0.75); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.15); }
+        .scanner-ring { 
+            width: 200px; height: 200px; border: 3px solid #00ff88; 
+            border-radius: 50%; position: fixed; top: 50%; left: 50%; 
+            transform: translate(-50%, -50%); z-index: 20; 
+            animation: pulse 2s infinite; display: none; pointer-events: none;
+        }
+        @keyframes pulse { 0%,100% { transform: translate(-50%,-50%) scale(1); opacity:0.7; } 50% { transform: translate(-50%,-50%) scale(1.1); opacity:1; } }
+        .scanner-line { width: 100%; height: 2px; background: #00ff88; position: absolute; top: 0; animation: scan 1.5s linear infinite; }
+        @keyframes scan { 0% { top: 0; } 100% { top: 100%; } }
+        .dialog-box { 
+            position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); 
+            max-width: 700px; width: 90%; background: rgba(0,0,0,0.85); 
+            border: 2px solid #4a9eff; border-radius: 16px; padding: 20px;
+            color: white; z-index: 30; display: none;
+        }
+        .choice-btn { 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+            border: none; color: white; padding: 12px 24px; border-radius: 10px;
+            cursor: pointer; font-family: 'Noto Sans Lao', sans-serif; font-size: 16px;
+            transition: all 0.3s; margin: 5px;
+        }
+        .choice-btn:hover { transform: translateY(-2px); box-shadow: 0 5px 20px rgba(102,126,234,0.5); }
+        .choice-btn.danger { background: linear-gradient(135deg, #ff416c 0%, #ff4b2b 100%); }
+        .choice-btn.safe { background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); }
+        .choice-btn.warning { background: linear-gradient(135deg, #f7971e 0%, #ffd200 100%); color: #333; }
+        .villager-tag { 
+            position: fixed; background: rgba(0,0,0,0.8); color: white; 
+            padding: 6px 12px; border-radius: 8px; font-size: 14px; 
+            border: 1px solid #4a9eff; display: none; pointer-events: none;
+        }
+        .health-bar { width: 100%; height: 8px; background: #333; border-radius: 4px; margin-top: 4px; }
+        .health-fill { height: 100%; border-radius: 4px; transition: width 0.5s; }
+        .scene-indicator { 
+            position: fixed; top: 20px; right: 20px; 
+            background: rgba(0,0,0,0.8); color: #ffd700; 
+            padding: 10px 20px; border-radius: 12px; 
+            border: 2px solid #ffd700; font-weight: 700; font-size: 18px;
+        }
+        .crosshair { 
+            position: fixed; top: 50%; left: 50%; 
+            width: 20px; height: 20px; transform: translate(-50%,-50%);
+            border: 2px solid rgba(255,255,255,0.6); border-radius: 50%; 
+            pointer-events: none; z-index: 15;
+        }
+        .crosshair::after { content: ''; position: absolute; top: 50%; left: 50%; width: 4px; height: 4px; background: white; border-radius: 50%; transform: translate(-50%,-50%); }
+        .fade-overlay { 
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+            background: black; z-index: 100; pointer-events: none;
+            opacity: 0; transition: opacity 1s;
+        }
+        .symptom-tag { display: inline-block; padding: 4px 10px; border-radius: 6px; margin: 2px; font-size: 13px; }
+        .symptom-red { background: #ff4444; color: white; }
+        .symptom-yellow { background: #ffaa00; color: #333; }
+        .symptom-green { background: #44ff44; color: #333; }
+        .notification { 
+            position: fixed; top: 80px; left: 50%; transform: translateX(-50%);
+            background: rgba(0,0,0,0.9); color: #00ff88; padding: 15px 30px;
+            border-radius: 12px; border: 2px solid #00ff88; font-weight: 600;
+            z-index: 40; display: none; animation: slideDown 0.5s ease;
+        }
+        @keyframes slideDown { from { transform: translateX(-50%) translateY(-50px); opacity: 0; } to { transform: translateX(-50%) translateY(0); opacity: 1; } }
+        #loading { 
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+            background: #0f0f23; z-index: 200; display: flex; 
+            flex-direction: column; align-items: center; justify-content: center;
+            color: white;
+        }
+        .loading-spinner { width: 60px; height: 60px; border: 4px solid #333; border-top-color: #4a9eff; border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 20px; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+    <div id="loading">
+        <div class="loading-spinner"></div>
+        <h2 class="text-2xl font-bold mb-2">ກຳລັງໂຫລດໂມດູນ 3...</h2>
+        <p class="text-gray-400">ກະກຽມຊຸມຊົນ 3D ແລະ ລະບົບການກວດສຸຂະພາບ</p>
+    </div>
+
+    <div id="canvas-container"></div>
+    <div class="crosshair"></div>
+    <div class="scanner-ring" id="scanner"><div class="scanner-line"></div></div>
+
+    <div class="scene-indicator" id="scene-indicator">ສາກ 1: ຍ່າງສຳຫຼວດຊຸມຊົນ</div>
+
+    <div class="ui-layer" style="top: 20px; left: 20px;">
+        <div class="hud-panel rounded-xl p-4 text-white" style="min-width: 220px;">
+            <div class="flex items-center gap-3 mb-2">
+                <div class="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-purple-600 flex items-center justify-center text-lg">👨‍⚕️</div>
+                <div>
+                    <div class="font-bold text-sm">ຜູ້ນຳສຸຂະພາບ</div>
+                    <div class="text-xs text-gray-400">ລະດັບ: <span id="level">1</span></div>
+                </div>
+            </div>
+            <div class="mb-2">
+                <div class="flex justify-between text-xs mb-1"><span>ຄະແນນປະສົບການ</span><span id="score">0</span></div>
+                <div class="health-bar"><div class="health-fill bg-gradient-to-r from-blue-400 to-purple-500" id="score-bar" style="width: 0%"></div></div>
+            </div>
+            <div class="text-xs text-gray-300 space-y-1">
+                <div>🏥 ສົ່ງໂຮງໝໍ: <span id="hospital-count" class="text-red-400 font-bold">0</span></div>
+                <div>🏠 ເບິ່ງແຍງຢູ່ບ້ານ: <span id="home-count" class="text-green-400 font-bold">0</span></div>
+                <div>💊 ປ່ຽນຢາຖືກຕ້ອງ: <span id="med-count" class="text-yellow-400 font-bold">0</span></div>
+                <div>⚠️ ລະບຸຜູ້ສ່ຽງ: <span id="risk-count" class="text-orange-400 font-bold">0</span></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="ui-layer" style="bottom: 20px; left: 20px;">
+        <div class="hud-panel rounded-xl p-3 text-white text-xs space-y-1" style="max-width: 250px;">
+            <div class="font-bold text-yellow-400 mb-1">🎮 ຄວບຄຸມ:</div>
+            <div>WASD / ລູກສອນ: ຍ່າງ</div>
+            <div>ເມົາສຊີ້: ເບິ່ງຮອບຕົວ</div>
+            <div>E: ໂຕ້ຕອບ / Q: ສະແກນ</div>
+            <div>ຄລິກ: ເລືອກຕົວເລືອກ</div>
+            <div class="mt-2 text-green-400" id="current-task">ໜ້າວຽກ: ຍ່າງສຳຫຼວດບ້ານ</div>
+        </div>
+    </div>
+
+    <div class="dialog-box" id="dialog-box">
+        <div class="flex items-start gap-4">
+            <div class="text-4xl" id="dialog-icon">🧑</div>
+            <div class="flex-1">
+                <div class="font-bold text-lg mb-1 text-yellow-300" id="dialog-name">ຊື່</div>
+                <div class="text-sm text-gray-300 mb-3" id="dialog-text">ຂໍ້ຄວາມ...</div>
+                <div id="dialog-choices" class="flex flex-wrap gap-2"></div>
+                <div id="symptom-display" class="mt-3 hidden"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="villager-tag" id="villager-tag"></div>
+    <div class="notification" id="notification"></div>
+    <div class="fade-overlay" id="fade-overlay"></div>
+
+    <div class="ui-layer" style="top: 50%; left: 50%; transform: translate(-50%, -50%);" id="start-screen">
+        <div class="hud-panel rounded-2xl p-8 text-white text-center" style="max-width: 600px; border: 2px solid #4a9eff;">
+            <div class="text-6xl mb-4">🏥</div>
+            <h1 class="text-3xl font-bold mb-2 text-yellow-300">ໂມດູນ 3</h1>
+            <h2 class="text-xl mb-4 text-blue-300">ຜູ້ນຳດ້ານສຸຂະພາບໃນຊຸມຊົນ</h2>
+            <p class="text-gray-300 mb-6 text-sm leading-relaxed">
+                ເປົ້າໝາຍ: ຄຸ້ມຄອງວິກິດການສຸຂະພາບໃນຊຸມຊົນ<br>
+                ໂດຍການຄັດແຍກຜູ້ປ່ວຍ (Triage) ແລະ ການແນະນຳການໃຊ້ຢາທີ່ຖືກຕ້ອງ<br><br>
+                🚨 ຈຳລອງກໍລະນີໄຂ້ເລືອດອອກ (Dengue Fever)
+            </p>
+            <button class="choice-btn text-lg px-8 py-4" onclick="startGame()">🚀 ເລີ່ມເກມ</button>
+        </div>
+    </div>
+
+    <script>
+        // ===== GLOBAL STATE =====
+        let scene, camera, renderer;
+        let player = { x: 0, z: 0, rotY: 0, rotX: 0 };
+        let keys = {};
+        let currentScene = 1;
+        let score = 0;
+        let stats = { hospital: 0, home: 0, med: 0, risk: 0 };
+        let villagers = [];
+        let houses = [];
+        let shops = [];
+        let interactables = [];
+        let raycaster = new THREE.Raycaster();
+        let mouse = new THREE.Vector2();
+        let isLocked = false;
+        let currentDialog = null;
+        let scannerActive = false;
+        let gameStarted = false;
+        let time = 0;
+
+        // ===== AUDIO =====
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        let audioCtx;
+        function initAudio() { if (!audioCtx) audioCtx = new AudioContext(); }
+        function playSound(type) {
+            if (!audioCtx) return;
+            try {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain); gain.connect(audioCtx.destination);
+                const now = audioCtx.currentTime;
+                if (type === 'scan') { osc.frequency.setValueAtTime(800, now); osc.frequency.exponentialRampToValueAtTime(1200, now+0.3); gain.gain.setValueAtTime(0.2, now); gain.gain.exponentialRampToValueAtTime(0.01, now+0.3); osc.start(now); osc.stop(now+0.3); }
+                else if (type === 'success') { osc.frequency.setValueAtTime(523, now); osc.frequency.setValueAtTime(659, now+0.1); osc.frequency.setValueAtTime(784, now+0.2); gain.gain.setValueAtTime(0.2, now); gain.gain.exponentialRampToValueAtTime(0.01, now+0.4); osc.start(now); osc.stop(now+0.4); }
+                else if (type === 'error') { osc.frequency.setValueAtTime(300, now); osc.frequency.exponentialRampToValueAtTime(150, now+0.3); gain.gain.setValueAtTime(0.2, now); gain.gain.exponentialRampToValueAtTime(0.01, now+0.3); osc.start(now); osc.stop(now+0.3); }
+                else if (type === 'alert') { osc.frequency.setValueAtTime(600, now); osc.frequency.setValueAtTime(600, now+0.1); osc.frequency.setValueAtTime(800, now+0.2); gain.gain.setValueAtTime(0.15, now); gain.gain.exponentialRampToValueAtTime(0.01, now+0.3); osc.start(now); osc.stop(now+0.3); }
+            } catch(e) {}
+        }
+
+        // ===== INIT THREE.JS =====
+        function init() {
+            try {
+                scene = new THREE.Scene();
+                scene.background = new THREE.Color(0x87CEEB);
+                scene.fog = new THREE.Fog(0x87CEEB, 20, 100);
+
+                camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
+                camera.position.set(0, 1.7, 0);
+
+                renderer = new THREE.WebGLRenderer({ antialias: true });
+                renderer.setSize(window.innerWidth, window.innerHeight);
+                renderer.shadowMap.enabled = true;
+                renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+                document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+                // Lighting
+                const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+                scene.add(ambientLight);
+
+                const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+                dirLight.position.set(50, 100, 50);
+                dirLight.castShadow = true;
+                dirLight.shadow.mapSize.width = 2048;
+                dirLight.shadow.mapSize.height = 2048;
+                dirLight.shadow.camera.near = 0.5;
+                dirLight.shadow.camera.far = 200;
+                dirLight.shadow.camera.left = -50;
+                dirLight.shadow.camera.right = 50;
+                dirLight.shadow.camera.top = 50;
+                dirLight.shadow.camera.bottom = -50;
+                scene.add(dirLight);
+
+                buildWorld();
+                setupControls();
+
+                document.getElementById('loading').style.display = 'none';
+
+                animate();
+            } catch (err) {
+                console.error('Init error:', err);
+                document.getElementById('loading').innerHTML = '<h2 class="text-red-400">ເກີດຂໍ້ຜິດພາດ</h2><p>' + err.message + '</p>';
+            }
+        }
+
+        // ===== WORLD BUILDING =====
+        function buildWorld() {
+            // Ground
+            const groundGeo = new THREE.PlaneGeometry(200, 200);
+            const groundMat = new THREE.MeshStandardMaterial({ color: 0x5a8a3a });
+            const ground = new THREE.Mesh(groundGeo, groundMat);
+            ground.rotation.x = -Math.PI / 2;
+            ground.receiveShadow = true;
+            scene.add(ground);
+
+            // Roads
+            const roadMat = new THREE.MeshStandardMaterial({ color: 0x8B7355 });
+            for (let i = -2; i <= 2; i++) {
+                const road = new THREE.Mesh(new THREE.PlaneGeometry(200, 6), roadMat);
+                road.rotation.x = -Math.PI / 2;
+                road.position.set(0, 0.01, i * 20);
+                road.receiveShadow = true;
+                scene.add(road);
+            }
+            const crossRoad = new THREE.Mesh(new THREE.PlaneGeometry(6, 200), roadMat);
+            crossRoad.rotation.x = -Math.PI / 2;
+            crossRoad.position.set(0, 0.01, 0);
+            crossRoad.receiveShadow = true;
+            scene.add(crossRoad);
+
+            // Houses
+            const housePositions = [
+                { x: -25, z: -20, color: 0xD2691E }, { x: -25, z: 20, color: 0xCD853F },
+                { x: 25, z: -20, color: 0xDEB887 }, { x: 25, z: 20, color: 0xF4A460 },
+                { x: -35, z: 0, color: 0xBC8F8F }, { x: 35, z: 0, color: 0xD2B48C },
+                { x: -15, z: -35, color: 0x8B4513 }, { x: 15, z: 35, color: 0xA0522D }
+            ];
+            housePositions.forEach((pos, i) => {
+                const house = createHouse(pos.x, pos.z, pos.color, i);
+                houses.push(house);
+            });
+
+            // Shops
+            const shop1 = createShop(-10, -10, 0xFF6B6B, 'ຮ້ານຂາຍຢາ');
+            const shop2 = createShop(15, -10, 0x4ECDC4, 'ຮ້ານຄ້ານ້ອຍ');
+            shops.push(shop1, shop2);
+
+            // Trees
+            for (let i = 0; i < 30; i++) {
+                const x = (Math.random() - 0.5) * 180;
+                const z = (Math.random() - 0.5) * 180;
+                if (Math.abs(x) < 10 && Math.abs(z) < 10) continue;
+                createTree(x, z);
+            }
+
+            // Hospital building
+            const hospital = createHospital(0, -50);
+
+            // Villagers
+            createVillagers();
+
+            // Decorative elements
+            createDecorations();
+        }
+
+        function createHouse(x, z, color, idx) {
+            const group = new THREE.Group();
+            group.position.set(x, 0, z);
+
+            // Walls
+            const walls = new THREE.Mesh(
+                new THREE.BoxGeometry(8, 5, 8),
+                new THREE.MeshStandardMaterial({ color: color })
+            );
+            walls.position.y = 2.5;
+            walls.castShadow = true;
+            walls.receiveShadow = true;
+            group.add(walls);
+
+            // Roof
+            const roof = new THREE.Mesh(
+                new THREE.ConeGeometry(6, 3, 4),
+                new THREE.MeshStandardMaterial({ color: 0x8B0000 })
+            );
+            roof.position.y = 6.5;
+            roof.rotation.y = Math.PI / 4;
+            roof.castShadow = true;
+            group.add(roof);
+
+            // Door
+            const door = new THREE.Mesh(
+                new THREE.BoxGeometry(1.5, 2.5, 0.2),
+                new THREE.MeshStandardMaterial({ color: 0x4a2c0f })
+            );
+            door.position.set(0, 1.25, 4.1);
+            group.add(door);
+
+            // Windows
+            const winMat = new THREE.MeshStandardMaterial({ color: 0x87CEEB, transparent: true, opacity: 0.7 });
+            const w1 = new THREE.Mesh(new THREE.BoxGeometry(1.5, 1.5, 0.2), winMat); w1.position.set(-2, 3, 4.1); group.add(w1);
+            const w2 = new THREE.Mesh(new THREE.BoxGeometry(1.5, 1.5, 0.2), winMat); w2.position.set(2, 3, 4.1); group.add(w2);
+
+            // Porch/steps
+            const steps = new THREE.Mesh(
+                new THREE.BoxGeometry(3, 0.3, 2),
+                new THREE.MeshStandardMaterial({ color: 0x888888 })
+            );
+            steps.position.set(0, 0.15, 5);
+            group.add(steps);
+
+            scene.add(group);
+
+            // Interaction zone
+            const zone = new THREE.Mesh(
+                new THREE.BoxGeometry(12, 8, 12),
+                new THREE.MeshBasicMaterial({ visible: false })
+            );
+            zone.position.set(x, 4, z);
+            zone.userData = { type: 'house', id: idx, name: 'ເຮືອນຄົບຄົວ ' + (idx+1) };
+            scene.add(zone);
+            interactables.push(zone);
+
+            return group;
+        }
+
+        function createShop(x, z, color, name) {
+            const group = new THREE.Group();
+            group.position.set(x, 0, z);
+
+            const body = new THREE.Mesh(
+                new THREE.BoxGeometry(6, 4, 6),
+                new THREE.MeshStandardMaterial({ color: color })
+            );
+            body.position.y = 2;
+            body.castShadow = true;
+            group.add(body);
+
+            // Awning
+            const awning = new THREE.Mesh(
+                new THREE.BoxGeometry(7, 0.3, 3),
+                new THREE.MeshStandardMaterial({ color: 0xFFFFFF })
+            );
+            awning.position.set(0, 4.2, 2);
+            group.add(awning);
+
+            // Sign
+            const sign = new THREE.Mesh(
+                new THREE.BoxGeometry(4, 1, 0.2),
+                new THREE.MeshStandardMaterial({ color: 0xFFD700 })
+            );
+            sign.position.set(0, 5, 3.1);
+            group.add(sign);
+
+            scene.add(group);
+
+            const zone = new THREE.Mesh(
+                new THREE.BoxGeometry(10, 6, 10),
+                new THREE.MeshBasicMaterial({ visible: false })
+            );
+            zone.position.set(x, 3, z);
+            zone.userData = { type: 'shop', name: name };
+            scene.add(zone);
+            interactables.push(zone);
+
+            return group;
+        }
+
+        function createHospital(x, z) {
+            const group = new THREE.Group();
+            group.position.set(x, 0, z);
+
+            // Main building
+            const building = new THREE.Mesh(
+                new THREE.BoxGeometry(15, 8, 12),
+                new THREE.MeshStandardMaterial({ color: 0xFFFFFF })
+            );
+            building.position.y = 4;
+            building.castShadow = true;
+            group.add(building);
+
+            // Red cross
+            const crossV = new THREE.Mesh(
+                new THREE.BoxGeometry(2, 6, 0.5),
+                new THREE.MeshStandardMaterial({ color: 0xFF0000, emissive: 0xFF0000, emissiveIntensity: 0.3 })
+            );
+            crossV.position.set(0, 6, 6.3);
+            group.add(crossV);
+            const crossH = new THREE.Mesh(
+                new THREE.BoxGeometry(6, 2, 0.5),
+                new THREE.MeshStandardMaterial({ color: 0xFF0000, emissive: 0xFF0000, emissiveIntensity: 0.3 })
+            );
+            crossH.position.set(0, 6, 6.3);
+            group.add(crossH);
+
+            // Red door (emergency)
+            const redDoor = new THREE.Mesh(
+                new THREE.BoxGeometry(3, 4, 0.3),
+                new THREE.MeshStandardMaterial({ color: 0xCC0000, emissive: 0xCC0000, emissiveIntensity: 0.2 })
+            );
+            redDoor.position.set(0, 2, 6.2);
+            group.add(redDoor);
+
+            // Green door (outpatient)
+            const greenDoor = new THREE.Mesh(
+                new THREE.BoxGeometry(2, 3, 0.3),
+                new THREE.MeshStandardMaterial({ color: 0x00AA00 })
+            );
+            greenDoor.position.set(5, 1.5, 6.2);
+            group.add(greenDoor);
+
+            scene.add(group);
+
+            const zone = new THREE.Mesh(
+                new THREE.BoxGeometry(20, 10, 20),
+                new THREE.MeshBasicMaterial({ visible: false })
+            );
+            zone.position.set(x, 5, z);
+            zone.userData = { type: 'hospital', name: 'ໂຮງໝໍຊຸມຊົນ' };
+            scene.add(zone);
+            interactables.push(zone);
+
+            return group;
+        }
+
+        function createTree(x, z) {
+            const group = new THREE.Group();
+            group.position.set(x, 0, z);
+
+            const trunk = new THREE.Mesh(
+                new THREE.CylinderGeometry(0.3, 0.5, 3),
+                new THREE.MeshStandardMaterial({ color: 0x8B4513 })
+            );
+            trunk.position.y = 1.5;
+            trunk.castShadow = true;
+            group.add(trunk);
+
+            const leaves = new THREE.Mesh(
+                new THREE.SphereGeometry(2.5),
+                new THREE.MeshStandardMaterial({ color: 0x228B22 })
+            );
+            leaves.position.y = 4;
+            leaves.castShadow = true;
+            group.add(leaves);
+
+            scene.add(group);
+        }
+
+        function createVillagers() {
+            const names = ['ສົມພອນ', 'ມານີ', 'ວັນນະ', 'ທອງສຸກ', 'ຄຳພັນ', 'ບົວລີ', 'ໄຊຍະ', 'ນິດ', 'ອ່ອນ', 'ສົມບູນ'];
+            const symptoms = [
+                { type: 'severe', desc: 'ໄຂ້ສູງ 40°C + ເຈັບທ້ອງຮຸນແຮງ', symptoms: ['ໄຂ້ສູງ', 'ເຈັບທ້ອງ', 'ຜົມຫຼົ່ນ'], history: false },
+                { type: 'severe', desc: 'ໄຂ້ສູງ + ຜື່ນແດງ + ອ່ອນເພຍ', symptoms: ['ໄຂ້ສູງ', 'ຜື່ນແດງ', 'ອ່ອນເພຍ'], history: true },
+                { type: 'mild', desc: 'ໄຂ້ເລັກນ້ອຍ + ປວດຫົວ', symptoms: ['ໄຂ້ເລັກນ້ອຍ', 'ປວດຫົວ'], history: false },
+                { type: 'mild', desc: 'ປວດກະຍະຄຽນ + ໄຂ້ຕ່ຳ', symptoms: ['ປວດກະຍະຄຽນ', 'ໄຂ້ຕ່ຳ'], history: false },
+                { type: 'severe', desc: 'ໄຂ້ສູງ + ເລືອດອອກຂ້າມຕາ + ອາການຊັກ', symptoms: ['ໄຂ້ສູງ', 'ເລືອດອອກຂ້າມຕາ', 'ຊັກ'], history: true },
+                { type: 'mild', desc: 'ອິດເມື່ອຍ + ໄຂ້ຕ່ຳ', symptoms: ['ອິດເມື່ອຍ', 'ໄຂ້ຕ່ຳ'], history: false },
+                { type: 'severe', desc: 'ໄຂ້ສູງ + ຮາກກະຈຸດແດງ', symptoms: ['ໄຂ້ສູງ', 'ຮາກກະຈຸດແດງ'], history: false },
+                { type: 'mild', desc: 'ໄຂ້ + ໄອເລັກນ້ອຍ', symptoms: ['ໄຂ້', 'ໄອ'], history: true },
+                { type: 'severe', desc: 'ໄຂ້ສູງ + ປວດຮຸນແຮງ + ຄາວ', symptoms: ['ໄຂ້ສູງ', 'ປວດຮຸນແຮງ', 'ຄາວ'], history: false },
+                { type: 'mild', desc: 'ປວດກ້າມເນື້ອ + ໄຂ້ຕ່ຳ', symptoms: ['ປວດກ້າມເນື້ອ', 'ໄຂ້ຕ່ຳ'], history: false }
+            ];
+
+            const positions = [
+                { x: -20, z: -15 }, { x: 20, z: 15 }, { x: -15, z: 25 },
+                { x: 30, z: -10 }, { x: -30, z: 10 }, { x: 10, z: -25 },
+                { x: -10, z: 5 }, { x: 5, z: 30 }, { x: -5, z: -5 }, { x: 0, z: 15 }
+            ];
+
+            for (let i = 0; i < 10; i++) {
+                const vData = symptoms[i];
+                const pos = positions[i];
+
+                const group = new THREE.Group();
+                group.position.set(pos.x, 0, pos.z);
+
+                // Body (using cylinder + spheres instead of capsule for compatibility)
+                const bodyColor = vData.type === 'severe' ? 0xFF4444 : (vData.history ? 0xFF8800 : 0x4488FF);
+                const bodyMat = new THREE.MeshStandardMaterial({ color: bodyColor });
+
+                const bodyCyl = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.4, 1.2, 8), bodyMat);
+                bodyCyl.position.y = 1;
+                bodyCyl.castShadow = true;
+                group.add(bodyCyl);
+
+                const bodyTop = new THREE.Mesh(new THREE.SphereGeometry(0.4, 8, 4, 0, Math.PI*2, 0, Math.PI/2), bodyMat);
+                bodyTop.position.y = 1.6;
+                group.add(bodyTop);
+
+                const bodyBot = new THREE.Mesh(new THREE.SphereGeometry(0.4, 8, 4, 0, Math.PI*2, Math.PI/2, Math.PI/2), bodyMat);
+                bodyBot.position.y = 0.4;
+                group.add(bodyBot);
+
+                // Head
+                const head = new THREE.Mesh(
+                    new THREE.SphereGeometry(0.35, 8, 8),
+                    new THREE.MeshStandardMaterial({ color: 0xFFDBAC })
+                );
+                head.position.y = 2;
+                head.castShadow = true;
+                group.add(head);
+
+                // Arms
+                const armGeo = new THREE.CylinderGeometry(0.1, 0.1, 0.8);
+                const armMat = new THREE.MeshStandardMaterial({ color: 0xFFDBAC });
+                const leftArm = new THREE.Mesh(armGeo, armMat); leftArm.position.set(-0.5, 1.3, 0); leftArm.rotation.z = 0.3; group.add(leftArm);
+                const rightArm = new THREE.Mesh(armGeo, armMat); rightArm.position.set(0.5, 1.3, 0); rightArm.rotation.z = -0.3; group.add(rightArm);
+
+                // Status indicator above head
+                const statusGeo = new THREE.SphereGeometry(0.15, 8, 8);
+                const statusMat = new THREE.MeshBasicMaterial({ 
+                    color: vData.type === 'severe' ? 0xFF0000 : (vData.history ? 0xFF8800 : 0x00FF00) 
+                });
+                const status = new THREE.Mesh(statusGeo, statusMat);
+                status.position.y = 2.6;
+                group.add(status);
+
+                // History badge (for DHF risk)
+                if (vData.history) {
+                    const badge = new THREE.Mesh(
+                        new THREE.RingGeometry(0.2, 0.3, 8),
+                        new THREE.MeshBasicMaterial({ color: 0xFF6600, side: THREE.DoubleSide })
+                    );
+                    badge.position.set(0.4, 2.4, 0);
+                    badge.rotation.y = Math.PI / 4;
+                    group.add(badge);
+                }
+
+                scene.add(group);
+
+                const villager = {
+                    mesh: group,
+                    data: {
+                        name: names[i],
+                        ...vData,
+                        id: i,
+                        scanned: false,
+                        treated: false,
+                        medicated: false,
+                        riskIdentified: false,
+                        wantMedicine: null
+                    },
+                    originalPos: { x: pos.x, z: pos.z },
+                    bobOffset: Math.random() * Math.PI * 2
+                };
+                villagers.push(villager);
+
+                // Interaction zone
+                const zone = new THREE.Mesh(
+                    new THREE.SphereGeometry(1.5, 8, 8),
+                    new THREE.MeshBasicMaterial({ visible: false })
+                );
+                zone.position.set(pos.x, 1, pos.z);
+                zone.userData = { type: 'villager', villager: villager };
+                scene.add(zone);
+                interactables.push(zone);
+            }
+        }
+
+        function createDecorations() {
+            // Benches
+            for (let i = 0; i < 4; i++) {
+                const bench = new THREE.Group();
+                bench.position.set((i - 1.5) * 15, 0, 8);
+                const seat = new THREE.Mesh(
+                    new THREE.BoxGeometry(3, 0.2, 1),
+                    new THREE.MeshStandardMaterial({ color: 0x8B4513 })
+                );
+                seat.position.y = 0.5;
+                bench.add(seat);
+                const leg1 = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.5, 0.8), new THREE.MeshStandardMaterial({ color: 0x666666 })); leg1.position.set(-1.2, 0.25, 0); bench.add(leg1);
+                const leg2 = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.5, 0.8), new THREE.MeshStandardMaterial({ color: 0x666666 })); leg2.position.set(1.2, 0.25, 0); bench.add(leg2);
+                scene.add(bench);
+            }
+
+            // Street lamps
+            for (let i = -2; i <= 2; i++) {
+                const lamp = new THREE.Group();
+                lamp.position.set(i * 20, 0, 3);
+                const pole = new THREE.Mesh(
+                    new THREE.CylinderGeometry(0.1, 0.15, 5),
+                    new THREE.MeshStandardMaterial({ color: 0x333333 })
+                );
+                pole.position.y = 2.5;
+                lamp.add(pole);
+                const bulb = new THREE.Mesh(
+                    new THREE.SphereGeometry(0.3),
+                    new THREE.MeshStandardMaterial({ color: 0xFFFFAA, emissive: 0xFFFFAA, emissiveIntensity: 0.5 })
+                );
+                bulb.position.y = 5;
+                lamp.add(bulb);
+                const pointLight = new THREE.PointLight(0xFFFFAA, 0.3, 10);
+                pointLight.position.y = 5;
+                lamp.add(pointLight);
+                scene.add(lamp);
+            }
+
+            // Water well
+            const well = new THREE.Group();
+            well.position.set(-8, 0, -8);
+            const wellBase = new THREE.Mesh(
+                new THREE.CylinderGeometry(2, 2, 1.5, 16),
+                new THREE.MeshStandardMaterial({ color: 0x888888 })
+            );
+            wellBase.position.y = 0.75;
+            wellBase.castShadow = true;
+            well.add(wellBase);
+            const wellWater = new THREE.Mesh(
+                new THREE.CylinderGeometry(1.5, 1.5, 0.1, 16),
+                new THREE.MeshStandardMaterial({ color: 0x0066CC, transparent: true, opacity: 0.8 })
+            );
+            wellWater.position.y = 1.4;
+            well.add(wellWater);
+            scene.add(well);
+        }
+
+        // ===== CONTROLS =====
+        function setupControls() {
+            document.addEventListener('keydown', (e) => { 
+                keys[e.key.toLowerCase()] = true; 
+                if (e.key.toLowerCase() === 'e') handleInteract();
+                if (e.key.toLowerCase() === 'q') toggleScanner();
+            });
+            document.addEventListener('keyup', (e) => { keys[e.key.toLowerCase()] = false; });
+
+            document.addEventListener('mousemove', (e) => {
+                if (isLocked && gameStarted) {
+                    player.rotY -= e.movementX * 0.002;
+                    player.rotX -= e.movementY * 0.002;
+                    player.rotX = Math.max(-Math.PI/2.5, Math.min(Math.PI/2.5, player.rotX));
+                }
+                mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+                mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+            });
+
+            document.addEventListener('click', (e) => {
+                if (gameStarted && !isLocked && e.target.tagName !== 'BUTTON') {
+                    document.body.requestPointerLock();
+                }
+            });
+
+            document.addEventListener('pointerlockchange', () => {
+                isLocked = document.pointerLockElement === document.body;
+            });
+
+            window.addEventListener('resize', () => {
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+            });
+        }
+
+        // ===== MOVEMENT =====
+        function updateMovement() {
+            if (!gameStarted) return;
+            const speed = 0.12;
+            let dx = 0, dz = 0;
+
+            if (keys['w'] || keys['arrowup']) { dx += Math.sin(player.rotY) * speed; dz += Math.cos(player.rotY) * speed; }
+            if (keys['s'] || keys['arrowdown']) { dx -= Math.sin(player.rotY) * speed; dz -= Math.cos(player.rotY) * speed; }
+            if (keys['a'] || keys['arrowleft']) { dx += Math.sin(player.rotY + Math.PI/2) * speed; dz += Math.cos(player.rotY + Math.PI/2) * speed; }
+            if (keys['d'] || keys['arrowright']) { dx += Math.sin(player.rotY - Math.PI/2) * speed; dz += Math.cos(player.rotY - Math.PI/2) * speed; }
+
+            const newX = player.x + dx;
+            const newZ = player.z + dz;
+
+            // Boundary check
+            if (Math.abs(newX) < 95 && Math.abs(newZ) < 95) {
+                // Collision with buildings
+                let collided = false;
+                for (let house of houses) {
+                    const hx = house.position.x, hz = house.position.z;
+                    if (Math.abs(newX - hx) < 6 && Math.abs(newZ - hz) < 6) { collided = true; break; }
+                }
+                for (let shop of shops) {
+                    const sx = shop.position.x, sz = shop.position.z;
+                    if (Math.abs(newX - sx) < 5 && Math.abs(newZ - sz) < 5) { collided = true; break; }
+                }
+                if (!collided) {
+                    player.x = newX;
+                    player.z = newZ;
+                }
+            }
+
+            camera.position.set(player.x, 1.7, player.z);
+            camera.rotation.order = 'YXZ';
+            camera.rotation.y = player.rotY;
+            camera.rotation.x = player.rotX;
+        }
+
+        // ===== INTERACTION =====
+        function handleInteract() {
+            if (!gameStarted) return;
+            raycaster.setFromCamera(new THREE.Vector2(0, 0), camera);
+            const intersects = raycaster.intersectObjects(interactables, true);
+
+            if (intersects.length > 0) {
+                const obj = intersects[0].object;
+                const data = obj.userData;
+
+                if (data.type === 'villager' && data.villager) {
+                    interactWithVillager(data.villager);
+                } else if (data.type === 'house') {
+                    showDialog('🏠', data.name, 'ນີ້ແມ່ນເຮືອນຂອງຄົບຄົວໃນຊຸມຊົນ. ຄົບຄົວນີ້ອາດມີສະມາຊິກທີ່ຕ້ອງການການຊ່ວຍເຫຼືອດ້ານສຸຂະພາບ.', []);
+                } else if (data.type === 'shop') {
+                    showDialog('🏪', data.name, 'ຮ້ານຄ້າໃນຊຸມຊົນ. ຕ້ອງລະວັງການຂາຍຢາທີ່ບໍ່ຖືກຕ້ອງ!', []);
+                } else if (data.type === 'hospital') {
+                    showDialog('🏥', data.name, 'ໂຮງໝໍຊຸມຊົນ. ປະຕູສີແດງ = ກໍລະນີສຸກເສີນ / ປະຕູສີຂຽວ = ຜູ້ປ່ວຍນອກ', []);
+                }
+            }
+        }
+
+        function toggleScanner() {
+            if (!gameStarted) return;
+            scannerActive = !scannerActive;
+            document.getElementById('scanner').style.display = scannerActive ? 'block' : 'none';
+            if (scannerActive) {
+                playSound('scan');
+                checkScan();
+            }
+        }
+
+        function checkScan() {
+            if (!scannerActive) return;
+            raycaster.setFromCamera(new THREE.Vector2(0, 0), camera);
+            const intersects = raycaster.intersectObjects(interactables, true);
+
+            if (intersects.length > 0) {
+                const obj = intersects[0].object;
+                if (obj.userData.type === 'villager' && obj.userData.villager) {
+                    const v = obj.userData.villager;
+                    if (!v.data.scanned) {
+                        v.data.scanned = true;
+                        showScanResult(v);
+                    }
+                }
+            }
+
+            if (scannerActive) setTimeout(checkScan, 500);
+        }
+
+        function showScanResult(villager) {
+            const v = villager.data;
+            let symptomHtml = '<div class="font-bold text-yellow-300 mb-2">🔍 ຜົນການສະແກນ:</div><div>';
+            v.symptoms.forEach(s => {
+                const cls = s.includes('ສູງ') || s.includes('ຮຸນ') || s.includes('ເລືອດ') || s.includes('ຊັກ') ? 'symptom-red' : 'symptom-yellow';
+                symptomHtml += `<span class="symptom-tag ${cls}">${s}</span>`;
+            });
+            symptomHtml += '</div>';
+
+            if (v.history) {
+                symptomHtml += '<div class="mt-2 text-orange-400 font-bold">⚠️ ປະຫວັດ: ເຄີຍເປັນໄຂ້ເລືອດອອກ (ສ່ຽງ DHF)</div>';
+            }
+
+            let choices = [];
+            if (v.type === 'severe') {
+                choices = [
+                    { text: '🚨 ສົ່ງໄປໂຮງໝໍ (ປະຕູສີແດງ)', cls: 'danger', action: () => triage(villager, 'hospital') },
+                    { text: '🏠 ເບິ່ງແຍງຢູ່ບ້ານ', cls: 'safe', action: () => triage(villager, 'home_wrong') }
+                ];
+            } else {
+                choices = [
+                    { text: '🏠 ເບິ່ງແຍງຢູ່ບ້ານ (ປະຕູສີຂຽວ)', cls: 'safe', action: () => triage(villager, 'home') },
+                    { text: '🚨 ສົ່ງໄປໂຮງໝໍ', cls: 'danger', action: () => triage(villager, 'hospital_wrong') }
+                ];
+            }
+
+            showDialog('👨‍⚕️', v.name, v.desc, choices, symptomHtml);
+            playSound('alert');
+        }
+
+        function triage(villager, decision) {
+            const v = villager.data;
+            if (decision === 'hospital') {
+                stats.hospital++;
+                score += 100;
+                showNotification(`✅ ຖືກຕ້ອງ! ສົ່ງ ${v.name} ໄປໂຮງໝໍ (ປະຕູສີແດງ)`);
+                playSound('success');
+                v.treated = true;
+                moveVillagerTo(villager, 0, -45);
+            } else if (decision === 'home') {
+                stats.home++;
+                score += 100;
+                showNotification(`✅ ຖືກຕ້ອງ! ໃຫ້ ${v.name} ພັກຜ່ອນຢູ່ບ້ານ`);
+                playSound('success');
+                v.treated = true;
+                showHomeCareAdvice(v.name);
+            } else if (decision === 'home_wrong') {
+                score -= 50;
+                showNotification(`❌ ຜິດ! ${v.name} ມີອາການຮຸນແຮງ, ຕ້ອງສົ່ງໂຮງໝໍ!`);
+                playSound('error');
+            } else if (decision === 'hospital_wrong') {
+                score -= 30;
+                showNotification(`⚠️ ບໍ່ຈຳເປັນ! ${v.name} ສາມາດຮັກສາຢູ່ບ້ານໄດ້`);
+                playSound('error');
+            }
+            updateHUD();
+            closeDialog();
+            checkSceneProgress();
+        }
+
+        function showHomeCareAdvice(name) {
+            setTimeout(() => {
+                showDialog('💊', 'ຄຳແນະນຳການຮັກສາຢູ່ບ້ານ', 
+                    `ສຳລັບ ${name}:
+• ພັກຜ່ອນເຕັມທີ່
+• ດື່ມນ້ຳ ORS ສະໝໍ່ນໆ
+• ນອນໃມຸ້ງກັນຍຸງ
+• ກິນຢາ Paracetamol ຖ້າມີໄຂ້
+• ❌ ຫ້າມກິນ Aspirin ຫຼື Ibuprofen`,
+                    [{ text: 'ເຂົ້າໃຈແລ້ວ', cls: 'safe', action: closeDialog }]
+                );
+            }, 500);
+        }
+
+        // ===== MEDICATION SCENE (Scene 3) =====
+        function startMedicationScene() {
+            currentScene = 3;
+            document.getElementById('scene-indicator').textContent = 'ສາກ 3: ຜູ້ຄວບຄຸມການໃຊ້ຢາ';
+            document.getElementById('current-task').textContent = 'ໜ້າວຽກ: ກວດສອບການໃຊ້ຢາ';
+            showNotification('🎯 ເລີ່ມສາກ 3: ຜູ້ຄວບຄຸມການໃຊ້ຢາ');
+
+            const medVillagers = villagers.filter(v => v.data.type === 'severe' && !v.data.medicated);
+            medVillagers.forEach((v, i) => {
+                v.mesh.position.set(-10 + i * 3, 0, -5 + i * 2);
+                v.data.wantMedicine = 'danger';
+            });
+
+            const safeVillagers = villagers.filter(v => v.data.type === 'mild' && !v.data.medicated);
+            safeVillagers.slice(0, 2).forEach((v, i) => {
+                v.mesh.position.set(-15 + i * 4, 0, -8 + i);
+                v.data.wantMedicine = 'safe';
+            });
+        }
+
+        function handleMedication(villager) {
+            const v = villager.data;
+            showDialog('💊', v.name, 
+                `${v.name} ຕ້ອງການຊື້ຢາສຳລັບອາການ: ${v.desc}
+
+ເຈົ້າຕ້ອງການໃຫ້ຢາອັນໃດ?`,
+                [
+                    { text: '💊 Paracetamol (ປອດໄພ)', cls: 'safe', action: () => giveMedicine(villager, 'paracetamol') },
+                    { text: '❌ Aspirin/Ibuprofen (ອັນຕະລາຍ)', cls: 'danger', action: () => giveMedicine(villager, 'danger') }
+                ]
+            );
+        }
+
+        function giveMedicine(villager, type) {
+            const v = villager.data;
+            const isDangerous = v.wantMedicine === 'danger';
+
+            if (isDangerous && type === 'paracetamol') {
+                stats.med++;
+                score += 150;
+                v.medicated = true;
+                showNotification(`✅ ດີຫຼາຍ! ປ່ຽນເປັນ Paracetamol ສຳລັບ ${v.name}`);
+                playSound('success');
+            } else if (!isDangerous && type === 'paracetamol') {
+                score += 50;
+                v.medicated = true;
+                showNotification(`✅ Paracetamol ເໝາະສົມສຳລັບ ${v.name}`);
+                playSound('success');
+            } else if (type === 'danger') {
+                score -= 100;
+                showNotification(`❌ ຜິດ! Aspirin/Ibuprofen ສຳລັບໄຂ້ເລືອດອອກອາດເຮັດໃຫ້ເລືອດອອກຮຸນແຮງ!`);
+                playSound('error');
+            }
+            updateHUD();
+            closeDialog();
+        }
+
+        // ===== RISK IDENTIFICATION (Scene 4) =====
+        function startRiskScene() {
+            currentScene = 4;
+            document.getElementById('scene-indicator').textContent = 'ສາກ 4: ລະບຸຜູ້ມີຄວາມສ່ຽງສູງ';
+            document.getElementById('current-task').textContent = 'ໜ້າວຽກ: ລະບຸຜູ້ສ່ຽງ DHF';
+            showNotification('🎯 ເລີ່ມສາກ 4: ລະບຸຜູ້ມີຄວາມສ່ຽງສູງ');
+
+            villagers.forEach(v => {
+                if (v.data.history && !v.data.riskIdentified) {
+                    const warning = new THREE.Mesh(
+                        new THREE.SphereGeometry(0.3, 8, 8),
+                        new THREE.MeshBasicMaterial({ color: 0xFF6600, transparent: true, opacity: 0.8 })
+                    );
+                    warning.position.y = 3;
+                    v.mesh.add(warning);
+                    v.warningMesh = warning;
+                }
+            });
+        }
+
+        function handleRiskIdentify(villager) {
+            const v = villager.data;
+            if (v.history && !v.riskIdentified) {
+                stats.risk++;
+                score += 200;
+                v.riskIdentified = true;
+                showNotification(`✅ ລະບຸຖືກຕ້ອງ! ${v.name} ມີປະຫວັດໄຂ້ເລືອດອອກ → ສ່ຽງ DHF`);
+                playSound('success');
+                if (v.warningMesh) v.warningMesh.material.color.setHex(0x00FF00);
+            } else if (!v.history) {
+                score -= 30;
+                showNotification(`❌ ຜິດ! ${v.name} ບໍ່ມີປະຫວັດໄຂ້ເລືອດອອກ`);
+                playSound('error');
+            }
+            updateHUD();
+            checkSceneProgress();
+        }
+
+        // ===== DIALOG SYSTEM =====
+        function showDialog(icon, name, text, choices, extraHtml) {
+            currentDialog = { choices };
+            document.getElementById('dialog-icon').textContent = icon;
+            document.getElementById('dialog-name').textContent = name;
+            document.getElementById('dialog-text').textContent = text;
+
+            const choicesDiv = document.getElementById('dialog-choices');
+            choicesDiv.innerHTML = '';
+            choices.forEach((c, i) => {
+                const btn = document.createElement('button');
+                btn.className = `choice-btn ${c.cls || ''}`;
+                btn.textContent = c.text;
+                btn.onclick = () => c.action();
+                choicesDiv.appendChild(btn);
+            });
+
+            const symptomDiv = document.getElementById('symptom-display');
+            if (extraHtml) {
+                symptomDiv.innerHTML = extraHtml;
+                symptomDiv.classList.remove('hidden');
+            } else {
+                symptomDiv.classList.add('hidden');
+            }
+
+            document.getElementById('dialog-box').style.display = 'block';
+            if (isLocked) document.exitPointerLock();
+        }
+
+        function closeDialog() {
+            document.getElementById('dialog-box').style.display = 'none';
+            currentDialog = null;
+        }
+
+        function showNotification(text) {
+            const notif = document.getElementById('notification');
+            notif.textContent = text;
+            notif.style.display = 'block';
+            setTimeout(() => { notif.style.display = 'none'; }, 4000);
+        }
+
+        // ===== SCENE MANAGEMENT =====
+        function checkSceneProgress() {
+            if (currentScene === 1) {
+                const distFromCenter = Math.sqrt(player.x * player.x + player.z * player.z);
+                if (distFromCenter > 30) {
+                    setTimeout(() => {
+                        showDialog('📋', 'ສາກ 1 ສຳເລັດ', 'ເຈົ້າໄດ້ສຳຫຼວດຊຸມຊົນແລ້ວ. ເຕົ້າສາກ 2: ການກວດສຸຂະພາບ (Triage)', [
+                            { text: 'ໄປສາກ 2', cls: 'safe', action: () => { closeDialog(); startScene2(); } }
+                        ]);
+                    }, 1000);
+                }
+            } else if (currentScene === 2) {
+                const treated = villagers.filter(v => v.data.treated).length;
+                if (treated >= 4) {
+                    setTimeout(() => {
+                        showDialog('📋', 'ສາກ 2 ສຳເລັດ', 'ເຈົ້າໄດ້ຮຽນຮູ້ການຄັດແຍກຜູ້ປ່ວຍແລ້ວ. ເຕົ້າສາກ 3: ການຄວບຄຸມຢາ', [
+                            { text: 'ໄປສາກ 3', cls: 'safe', action: () => { closeDialog(); startMedicationScene(); } }
+                        ]);
+                    }, 1500);
+                }
+            } else if (currentScene === 3) {
+                const medicated = villagers.filter(v => v.data.medicated).length;
+                if (medicated >= 3) {
+                    setTimeout(() => {
+                        showDialog('📋', 'ສາກ 3 ສຳເລັດ', 'ເຈົ້າໄດ້ຮຽນຮູ້ການຄວບຄຸມຢາແລ້ວ. ເຕົ້າສາກ 4: ລະບຸຜູ້ສ່ຽງ', [
+                            { text: 'ໄປສາກ 4', cls: 'safe', action: () => { closeDialog(); startRiskScene(); } }
+                        ]);
+                    }, 1500);
+                }
+            } else if (currentScene === 4) {
+                const identified = villagers.filter(v => v.data.riskIdentified).length;
+                const totalRisk = villagers.filter(v => v.data.history).length;
+                if (identified >= totalRisk && totalRisk > 0) {
+                    setTimeout(showEndScreen, 1500);
+                }
+            }
+        }
+
+        function startScene2() {
+            currentScene = 2;
+            document.getElementById('scene-indicator').textContent = 'ສາກ 2: ການກວດສຸຂະພາບ (Triage)';
+            document.getElementById('current-task').textContent = 'ໜ້າວຽກ: ເຂົ້າຫາເພື່ອນບ້ານ ແລະ ກົດ Q ເພື່ອສະແກນ';
+            showNotification('🎯 ເລີ່ມສາກ 2: ໃຊ້ເຄື່ອງສະແກນ (Q) ເພື່ອກວດອາການເພື່ອນບ້ານ');
+        }
+
+        function showEndScreen() {
+            const totalScore = score + (stats.hospital * 50) + (stats.home * 50) + (stats.med * 50) + (stats.risk * 100);
+            const grade = totalScore > 800 ? 'S' : totalScore > 600 ? 'A' : totalScore > 400 ? 'B' : 'C';
+
+            showDialog('🏆', 'ສຳເລັດໂມດູນ 3!', 
+                `ຄະແນນລວມ: ${totalScore}
+ເກຣດ: ${grade}
+
+` +
+                `🏥 ສົ່ງໂຮງໝໍ: ${stats.hospital}
+` +
+                `🏠 ເບິ່ງແຍງຢູ່ບ້ານ: ${stats.home}
+` +
+                `💊 ປ່ຽນຢາຖືກຕ້ອງ: ${stats.med}
+` +
+                `⚠️ ລະບຸຜູ້ສ່ຽງ: ${stats.risk}
+
+` +
+                `ຂໍຂອບໃຈສຳລັບການເປັນຜູ້ນຳດ້ານສຸຂະພາບໃນຊຸມຊົນ!`,
+                [
+                    { text: 'ເລີ່ມໃໝ່', cls: 'safe', action: () => location.reload() }
+                ]
+            );
+        }
+
+        // ===== VILLAGER INTERACTION ROUTING =====
+        function interactWithVillager(villager) {
+            if (currentScene === 2 && !villager.data.treated) {
+                if (!villager.data.scanned) {
+                    showDialog('👨‍⚕️', villager.data.name, 
+                        'ກົດ Q ເພື່ອໃຊ້ເຄື່ອງສະແກນກວດອາການ. ຫຼັງຈາກນັ້ນຈຶ່ງຕັດສິນໃຈວ່າຈະສົ່ງໄປໂຮງໝໍຫຼືເບິ່ງແຍງຢູ່ບ້ານ.',
+                        [{ text: 'ເຂົ້າໃຈ', cls: 'safe', action: closeDialog }]
+                    );
+                } else {
+                    showScanResult(villager);
+                }
+            } else if (currentScene === 3 && !villager.data.medicated) {
+                handleMedication(villager);
+            } else if (currentScene === 4 && !villager.data.riskIdentified) {
+                handleRiskIdentify(villager);
+            } else {
+                const greetings = ['ສະບາຍດີ!', 'ມື້ນີ້ອາກາດດີ', 'ຂ້ອຍຮູ້ສຶກດີ', 'ຂອບໃຈທີ່ມາຖາມຫາ'];
+                showDialog('🧑', villager.data.name, greetings[Math.floor(Math.random() * greetings.length)], []);
+            }
+        }
+
+        function moveVillagerTo(villager, tx, tz) {
+            const start = { x: villager.mesh.position.x, z: villager.mesh.position.z };
+            const dist = Math.sqrt((tx-start.x)**2 + (tz-start.z)**2);
+            const duration = dist * 100;
+            const startTime = Date.now();
+
+            function step() {
+                const elapsed = Date.now() - startTime;
+                const t = Math.min(elapsed / duration, 1);
+                villager.mesh.position.x = start.x + (tx - start.x) * t;
+                villager.mesh.position.z = start.z + (tz - start.z) * t;
+                villager.mesh.lookAt(tx, 0, tz);
+                if (t < 1) requestAnimationFrame(step);
+            }
+            step();
+        }
+
+        // ===== HUD UPDATE =====
+        function updateHUD() {
+            document.getElementById('score').textContent = score;
+            document.getElementById('score-bar').style.width = Math.min(100, score / 10) + '%';
+            document.getElementById('hospital-count').textContent = stats.hospital;
+            document.getElementById('home-count').textContent = stats.home;
+            document.getElementById('med-count').textContent = stats.med;
+            document.getElementById('risk-count').textContent = stats.risk;
+
+            const level = Math.floor(score / 300) + 1;
+            document.getElementById('level').textContent = level;
+        }
+
+        // ===== MAIN LOOP =====
+        function animate() {
+            requestAnimationFrame(animate);
+            time += 0.01;
+
+            updateMovement();
+
+            // Animate villagers
+            villagers.forEach(v => {
+                v.mesh.children.forEach(child => {
+                    if (child.geometry && (child.geometry.type === 'CylinderGeometry' || child.geometry.type === 'SphereGeometry')) {
+                        if (child.position.y > 0.5 && child.position.y < 2) {
+                            child.position.y += Math.sin(time * 2 + v.bobOffset) * 0.002;
+                        }
+                    }
+                });
+
+                const dx = player.x - v.mesh.position.x;
+                const dz = player.z - v.mesh.position.z;
+                const dist = Math.sqrt(dx*dx + dz*dz);
+                if (dist < 8) {
+                    v.mesh.rotation.y = Math.atan2(dx, dz);
+                }
+            });
+
+            updateVillagerTag();
+
+            renderer.render(scene, camera);
+        }
+
+        function updateVillagerTag() {
+            const tag = document.getElementById('villager-tag');
+            raycaster.setFromCamera(mouse, camera);
+            const intersects = raycaster.intersectObjects(interactables, true);
+
+            if (intersects.length > 0) {
+                const obj = intersects[0].object;
+                if (obj.userData.type === 'villager' && obj.userData.villager) {
+                    const v = obj.userData.villager.data;
+                    const screenPos = toScreenPosition(obj.userData.villager.mesh.position);
+                    tag.style.left = screenPos.x + 'px';
+                    tag.style.top = (screenPos.y - 60) + 'px';
+                    tag.style.display = 'block';
+
+                    let status = '';
+                    if (v.scanned) {
+                        if (v.treated) status = ' ✅ ຮັກສາແລ້ວ';
+                        else if (v.type === 'severe') status = ' 🚨 ອັນຕະລາຍ';
+                        else status = ' ✅ ເບົາບາງ';
+                    } else {
+                        status = ' ❓ ຍັງບໍ່ທັນສະແກນ';
+                    }
+
+                    tag.innerHTML = `<strong>${v.name}</strong>${status}${v.history ? '<br><span style="color:#ff8800">⚠️ ສ່ຽງ DHF</span>' : ''}`;
+                } else if (obj.userData.name) {
+                    const screenPos = toScreenPosition(obj.position);
+                    tag.style.left = screenPos.x + 'px';
+                    tag.style.top = (screenPos.y - 40) + 'px';
+                    tag.style.display = 'block';
+                    tag.textContent = obj.userData.name;
+                } else {
+                    tag.style.display = 'none';
+                }
+            } else {
+                tag.style.display = 'none';
+            }
+        }
+
+        function toScreenPosition(objPos) {
+            const vector = new THREE.Vector3(objPos.x, objPos.y + 2, objPos.z);
+            vector.project(camera);
+            return {
+                x: (vector.x * 0.5 + 0.5) * window.innerWidth,
+                y: (-(vector.y * 0.5) + 0.5) * window.innerHeight
+            };
+        }
+
+        // ===== START GAME =====
+        function startGame() {
+            initAudio();
+            gameStarted = true;
+            document.getElementById('start-screen').style.display = 'none';
+            document.body.requestPointerLock();
+            showNotification('🎯 ເລີ່ມສາກ 1: ຍ່າງສຳຫຼວດຊຸມຊົນ. ຍ່າງອອກຈາກຈຸດສູນກາງເພື່ອສຳຫຼວດ!');
+        }
+
+        // Initialize when DOM ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', init);
+        } else {
+            init();
+        }
+    </script>
+</body>
+</html>
