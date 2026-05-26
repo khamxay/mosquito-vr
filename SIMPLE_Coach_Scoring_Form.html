@@ -1,0 +1,859 @@
+<!DOCTYPE html>
+<html lang="lo">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ແບບຟອມເກັບຄະແນນ ແລະ ຕິດຕາມພາລະກິດ - ໂຄງການ SIMPLE (THE COACH)</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Lao:wght@400;500;600;700&display=swap');
+
+        :root {
+            --primary: #1a237e;
+            --hero: #2e7d32;
+            --penalty: #c62828;
+            --gold: #f9a825;
+            --blue: #1565c0;
+            --light-blue: #e3f2fd;
+            --light-green: #e8f5e9;
+            --light-red: #ffebee;
+            --light-yellow: #fffde7;
+            --border: #bdbdbd;
+            --text: #212121;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Noto Sans Lao', 'Phetsarath OT', 'Arial', sans-serif;
+            background: #f5f5f5;
+            color: var(--text);
+            line-height: 1.6;
+            padding: 20px;
+        }
+
+        .paper {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            padding: 40px 50px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            border-radius: 4px;
+        }
+
+        /* Header */
+        .form-header {
+            text-align: center;
+            border-bottom: 3px solid var(--primary);
+            padding-bottom: 20px;
+            margin-bottom: 28px;
+        }
+
+        .form-header h1 {
+            font-size: 22px;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 6px;
+        }
+
+        .form-header .subtitle {
+            font-size: 14px;
+            color: #616161;
+            font-weight: 500;
+        }
+
+        .form-header .role-badge {
+            display: inline-block;
+            background: var(--primary);
+            color: white;
+            padding: 4px 16px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+            margin-top: 10px;
+        }
+
+        /* Info Section */
+        .info-section {
+            background: var(--light-blue);
+            border: 1px solid #90caf9;
+            border-radius: 8px;
+            padding: 20px 24px;
+            margin-bottom: 24px;
+        }
+
+        .info-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px;
+            margin-bottom: 12px;
+            align-items: center;
+        }
+
+        .info-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .info-label {
+            font-weight: 600;
+            color: var(--primary);
+            font-size: 14px;
+            white-space: nowrap;
+        }
+
+        .info-input {
+            flex: 1;
+            min-width: 200px;
+            border: none;
+            border-bottom: 2px solid var(--primary);
+            background: transparent;
+            padding: 4px 8px;
+            font-family: inherit;
+            font-size: 14px;
+            color: var(--text);
+        }
+
+        .info-input:focus {
+            outline: none;
+            border-bottom-color: var(--gold);
+        }
+
+        .round-options {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .round-option {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 14px;
+        }
+
+        /* Section Headers */
+        .section-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 28px 0 16px 0;
+            padding: 10px 16px;
+            border-radius: 6px;
+            font-weight: 700;
+            font-size: 15px;
+        }
+
+        .section-checklist {
+            background: #fff3e0;
+            border-left: 4px solid var(--gold);
+            color: #e65100;
+        }
+
+        .section-hero {
+            background: var(--light-green);
+            border-left: 4px solid var(--hero);
+            color: var(--hero);
+        }
+
+        .section-penalty {
+            background: var(--light-red);
+            border-left: 4px solid var(--penalty);
+            color: var(--penalty);
+        }
+
+        .section-summary {
+            background: var(--light-blue);
+            border-left: 4px solid var(--blue);
+            color: var(--blue);
+        }
+
+        .section-feedback {
+            background: #f3e5f5;
+            border-left: 4px solid #7b1fa2;
+            color: #7b1fa2;
+        }
+
+        /* Checklist */
+        .checklist {
+            padding: 0 8px;
+        }
+
+        .check-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            padding: 12px 0;
+            border-bottom: 1px dashed #e0e0e0;
+        }
+
+        .check-item:last-child {
+            border-bottom: none;
+        }
+
+        .checkbox {
+            width: 20px;
+            height: 20px;
+            border: 2px solid var(--border);
+            border-radius: 4px;
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+
+        .check-text {
+            flex: 1;
+            font-size: 14px;
+            line-height: 1.7;
+        }
+
+        .rotation-badge {
+            display: inline-block;
+            background: var(--gold);
+            color: white;
+            padding: 2px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-left: 8px;
+        }
+
+        /* Scoring Table */
+        .score-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 8px;
+            font-size: 14px;
+        }
+
+        .score-table th {
+            padding: 10px 12px;
+            text-align: left;
+            font-weight: 600;
+            border-bottom: 2px solid;
+        }
+
+        .score-table td {
+            padding: 10px 12px;
+            border-bottom: 1px solid #e0e0e0;
+            vertical-align: middle;
+        }
+
+        .score-table .col-action {
+            width: 45%;
+        }
+
+        .score-table .col-points {
+            width: 12%;
+            text-align: center;
+        }
+
+        .score-table .col-freq {
+            width: 18%;
+            text-align: center;
+        }
+
+        .score-table .col-total {
+            width: 25%;
+            text-align: center;
+        }
+
+        .hero-table th {
+            background: var(--light-green);
+            border-color: var(--hero);
+            color: var(--hero);
+        }
+
+        .penalty-table th {
+            background: var(--light-red);
+            border-color: var(--penalty);
+            color: var(--penalty);
+        }
+
+        .points-badge {
+            display: inline-block;
+            padding: 2px 10px;
+            border-radius: 12px;
+            font-weight: 700;
+            font-size: 13px;
+        }
+
+        .points-positive {
+            background: #c8e6c9;
+            color: var(--hero);
+        }
+
+        .points-negative {
+            background: #ffcdd2;
+            color: var(--penalty);
+        }
+
+        .input-cell {
+            border: 2px dashed var(--border);
+            border-radius: 4px;
+            min-height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #fafafa;
+        }
+
+        .checkbox-group {
+            display: flex;
+            gap: 16px;
+            justify-content: center;
+        }
+
+        .checkbox-option {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+        }
+
+        .total-row {
+            font-weight: 700;
+            font-size: 15px;
+        }
+
+        .hero-table .total-row {
+            background: #c8e6c9;
+            color: var(--hero);
+        }
+
+        .penalty-table .total-row {
+            background: #ffcdd2;
+            color: var(--penalty);
+        }
+
+        /* Summary Section */
+        .summary-box {
+            background: var(--light-blue);
+            border: 2px solid var(--blue);
+            border-radius: 8px;
+            padding: 20px 24px;
+            margin-top: 16px;
+        }
+
+        .formula-display {
+            text-align: center;
+            font-size: 15px;
+            color: #424242;
+            margin-bottom: 16px;
+            padding: 10px;
+            background: white;
+            border-radius: 6px;
+            border: 1px solid #bbdefb;
+        }
+
+        .formula-display .green-text {
+            color: var(--hero);
+            font-weight: 700;
+        }
+
+        .formula-display .red-text {
+            color: var(--penalty);
+            font-weight: 700;
+        }
+
+        .final-score-box {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 16px;
+            margin-bottom: 20px;
+            padding: 16px;
+            background: white;
+            border-radius: 8px;
+            border: 2px solid var(--blue);
+        }
+
+        .final-score-label {
+            font-weight: 700;
+            font-size: 16px;
+            color: var(--primary);
+        }
+
+        .final-score-input {
+            width: 120px;
+            height: 48px;
+            border: 2px solid var(--blue);
+            border-radius: 8px;
+            text-align: center;
+            font-family: inherit;
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--blue);
+            background: var(--light-blue);
+        }
+
+        .final-score-unit {
+            font-weight: 600;
+            color: #616161;
+        }
+
+        /* Level Options */
+        .level-options {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .level-option {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            padding: 14px 16px;
+            border-radius: 8px;
+            border: 2px solid;
+            background: white;
+        }
+
+        .level-checkbox {
+            width: 22px;
+            height: 22px;
+            border: 2px solid var(--border);
+            border-radius: 4px;
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+
+        .level-content {
+            flex: 1;
+        }
+
+        .level-title {
+            font-weight: 700;
+            font-size: 15px;
+            margin-bottom: 4px;
+        }
+
+        .level-desc {
+            font-size: 13px;
+            color: #616161;
+            line-height: 1.5;
+        }
+
+        .level-excellent {
+            border-color: var(--hero);
+        }
+        .level-excellent .level-title {
+            color: var(--hero);
+        }
+        .level-excellent .level-checkbox {
+            border-color: var(--hero);
+        }
+
+        .level-medium {
+            border-color: var(--gold);
+        }
+        .level-medium .level-title {
+            color: #e65100;
+        }
+        .level-medium .level-checkbox {
+            border-color: var(--gold);
+        }
+
+        .level-beginner {
+            border-color: var(--penalty);
+        }
+        .level-beginner .level-title {
+            color: var(--penalty);
+        }
+        .level-beginner .level-checkbox {
+            border-color: var(--penalty);
+        }
+
+        /* Feedback Section */
+        .feedback-section {
+            margin-top: 16px;
+        }
+
+        .feedback-item {
+            margin-bottom: 16px;
+        }
+
+        .feedback-label {
+            font-weight: 600;
+            font-size: 14px;
+            color: #424242;
+            margin-bottom: 8px;
+        }
+
+        .feedback-lines {
+            border: 2px dashed var(--border);
+            border-radius: 6px;
+            padding: 12px;
+            min-height: 80px;
+            background: #fafafa;
+        }
+
+        .feedback-line {
+            border-bottom: 1px solid #e0e0e0;
+            height: 28px;
+        }
+
+        .feedback-line:last-child {
+            border-bottom: none;
+        }
+
+        /* Footer */
+        .form-footer {
+            margin-top: 32px;
+            padding-top: 20px;
+            border-top: 2px solid #e0e0e0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 13px;
+            color: #9e9e9e;
+        }
+
+        .signature-area {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .signature-line {
+            width: 160px;
+            border-bottom: 1px solid #9e9e9e;
+        }
+
+        /* Print Button */
+        .print-btn {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 50px;
+            font-family: inherit;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(26,35,126,0.3);
+            transition: all 0.3s;
+        }
+
+        .print-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(26,35,126,0.4);
+        }
+
+        /* Print Styles */
+        @media print {
+            body {
+                background: white;
+                padding: 0;
+            }
+            .paper {
+                box-shadow: none;
+                padding: 20px 30px;
+                max-width: 100%;
+            }
+            .print-btn {
+                display: none;
+            }
+            .info-input {
+                border-bottom: 1px solid #000;
+            }
+            .section-header {
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+            .score-table th, .score-table td {
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+            .hero-table .total-row,
+            .penalty-table .total-row,
+            .summary-box,
+            .info-section,
+            .level-option {
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .paper {
+                padding: 20px;
+            }
+            .info-row {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            .info-input {
+                width: 100%;
+            }
+            .score-table {
+                font-size: 12px;
+            }
+            .score-table th, .score-table td {
+                padding: 6px 8px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="paper">
+        <!-- Header -->
+        <div class="form-header">
+            <h1>ແບບຟອມເກັບຄະແນນ ແລະ ຕິດຕາມພາລະກິດ</h1>
+            <div class="subtitle">ໂຄງການ SIMPLE — ບົດບາດປະຈຳກຸ່ມ</div>
+            <div class="role-badge">👤 THE COACH</div>
+        </div>
+
+        <!-- Info Section -->
+        <div class="info-section">
+            <div class="info-row">
+                <span class="info-label">👥 ຊື່ກຸ່ມ (Squad Name):</span>
+                <input type="text" class="info-input" placeholder="________________________________________">
+            </div>
+            <div class="info-row">
+                <span class="info-label">📝 ລາຍຊື່ສະມາຊິກ:</span>
+                <span style="font-size: 13px; color: #616161;">
+                    1. Pilot (VR): <input type="text" class="info-input" style="min-width: 140px; width: 140px;" placeholder="______________"> &nbsp;&nbsp;
+                    2. Coach: <input type="text" class="info-input" style="min-width: 140px; width: 140px;" placeholder="______________"> &nbsp;&nbsp;
+                    3. Analyst: <input type="text" class="info-input" style="min-width: 140px; width: 140px;" placeholder="______________">
+                </span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">🎮 ຮອບການຫຼິ້ນ (Round):</span>
+                <div class="round-options">
+                    <label class="round-option">
+                        <span class="checkbox"></span>
+                        <span>ຮອບທີ 1</span>
+                    </label>
+                    <label class="round-option">
+                        <span class="checkbox"></span>
+                        <span>ຮອບທີ 2</span>
+                    </label>
+                    <label class="round-option">
+                        <span class="checkbox"></span>
+                        <span>ຮອບທີ 3</span>
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <!-- Section 1: Checklist -->
+        <div class="section-header section-checklist">
+            <span>⏱️</span>
+            <span>ສ່ວນທີ 1: ການຕິດຕາມສະຖານະ (Real-time Checklist)</span>
+        </div>
+        <p style="font-size: 13px; color: #616161; margin-bottom: 12px; padding: 0 8px;">
+            ໃຫ້ Coach ໝາຍຕິກ [ / ] ເມື່ອ Pilot ປະຕິບັດຜ່ານແຕ່ລະ Checkpoint ເພື່ອເພີ່ມຄວາມຊັດເຈນໃນການສະຫຼັບບົດບາດ (Rotation)
+        </p>
+
+        <div class="checklist">
+            <div class="check-item">
+                <span class="checkbox"></span>
+                <span class="check-text">
+                    <strong>Checkpoint 1:</strong> Pilot ສາມາດເຂົ້າສູ່ລະບົບ ແລະ ກຽມພ້ອມອຸປະກອນ VR ສຳເລັດ.
+                </span>
+            </div>
+            <div class="check-item">
+                <span class="checkbox"></span>
+                <span class="check-text">
+                    <strong>Checkpoint 2:</strong> Analyst ສົ່ງຂໍ້ມູນວິທະຍາສາດ IRD ຊຸດທຳອິດໃຫ້ທີມສຳເລັດ.
+                </span>
+            </div>
+            <div class="check-item">
+                <span class="checkbox"></span>
+                <span class="check-text">
+                    <strong>Checkpoint 3 (Mission 1):</strong> Pilot ເກັບຕົວຢ່າງນໍ້າ/ຕົວຢ່າງວິທະຍາສາດຊຸດທຳອິດສຳເລັດ
+                    <span class="rotation-badge">🔄 ເຖິງເວລາສະຫຼັບບົດບາດຄັ້ງທີ 1</span>
+                </span>
+            </div>
+            <div class="check-item">
+                <span class="checkbox"></span>
+                <span class="check-text">
+                    <strong>Checkpoint 4 (Mission 2):</strong> ທີມຄວບຄຸມການລະບາດ ແລະ ຮັກສາປະຊາກອນກຸ່ມທຳອິດ
+                    <span class="rotation-badge">🔄 ເຖິງເວລາສະຫຼັບບົດບາດຄັ້ງທີ 2</span>
+                </span>
+            </div>
+        </div>
+
+        <!-- Section 2: Scoring -->
+        <div class="section-header section-hero">
+            <span>📊</span>
+            <span>ສ່ວນທີ 2: ຕາຕະລາງບັນທຶກຄະແນນ (Scoring Sheet)</span>
+        </div>
+        <p style="font-size: 13px; color: #616161; margin-bottom: 12px; padding: 0 8px;">
+            ໃຫ້ Coach ໃສ່ຈຳນວນຄັ້ງ (Frequency) ທີ່ເກີດເຫດການຂຶ້ນໃນເກມ ແລ້ວນໍາມາຄູນກັບຄະແນນ
+        </p>
+
+        <!-- Hero Score -->
+        <div style="margin-bottom: 8px; padding: 0 8px;">
+            <span style="font-weight: 700; color: var(--hero); font-size: 15px;">🟢 1. ຄະແນນດ້ານບວກ (Hero Score: S<sub>green</sub>)</span>
+        </div>
+
+        <table class="score-table hero-table">
+            <thead>
+                <tr>
+                    <th class="col-action">ກິດຈະກໍາ / ພາລະກິດ</th>
+                    <th class="col-points">ຄະແນນ</th>
+                    <th class="col-freq">ຈຳນວນຄັ້ງທີ່ເຮັດໄດ້</th>
+                    <th class="col-total">ຄະແນນລວມ</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>🔬 ເກັບຕົວຢ່າງວິທະຍາສາດ/ຕົວຢ່າງນໍ້າຖືກຕ້ອງ</td>
+                    <td class="col-points"><span class="points-badge points-positive">+100</span></td>
+                    <td class="col-freq"><div class="input-cell">.......... ຄັ້ງ</div></td>
+                    <td class="col-total"><div class="input-cell">....................</div></td>
+                </tr>
+                <tr>
+                    <td>🚑 ຊ່ວຍເຫຼືອ/ຮັກສາຄົນເຈັບໄດ້ທັນເວລາ</td>
+                    <td class="col-points"><span class="points-badge points-positive">+50</span></td>
+                    <td class="col-freq"><div class="input-cell">.......... ຄົນ</div></td>
+                    <td class="col-total"><div class="input-cell">....................</div></td>
+                </tr>
+                <tr>
+                    <td>💨 (ໂບນັດ) ອອກຊີເຈນເຫຼືອຕອນຈົບເກມ (>50%)</td>
+                    <td class="col-points"><span class="points-badge points-positive">+200</span></td>
+                    <td class="col-freq">
+                        <div class="checkbox-group">
+                            <span class="checkbox-option"><span class="checkbox"></span> ແມ່ນ</span>
+                            <span class="checkbox-option"><span class="checkbox"></span> ບໍ່ແມ່ນ</span>
+                        </div>
+                    </td>
+                    <td class="col-total"><div class="input-cell">....................</div></td>
+                </tr>
+                <tr class="total-row">
+                    <td colspan="3" style="text-align: right;">📗 (A) ລວມຄະແນນສີຂຽວທັງໝົດ</td>
+                    <td class="col-total"><div class="input-cell" style="border: 2px solid var(--hero); background: white; font-weight: 700;">....................</div></td>
+                </tr>
+            </tbody>
+        </table>
+
+        <!-- Penalty Score -->
+        <div style="margin: 20px 0 8px 0; padding: 0 8px;">
+            <span style="font-weight: 700; color: var(--penalty); font-size: 15px;">🔴 2. ຄະແນນດ້ານລົບ (Penalty Score: S<sub>red</sub>)</span>
+        </div>
+
+        <table class="score-table penalty-table">
+            <thead>
+                <tr>
+                    <th class="col-action">ຄວາມຜິດພາດ / ຄວາມສ່ຽງ</th>
+                    <th class="col-points">ຄະແນນ</th>
+                    <th class="col-freq">ຈຳນວນຄັ້ງທີ່ເກີດຂຶ້ນ</th>
+                    <th class="col-total">ຄະແນນລວມ</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>🛡️ ປ້ອງກັນຜິດພາດ / ເຊື້ອພະຍາດແຜ່ລະບາດໃນບ້ານ</td>
+                    <td class="col-points"><span class="points-badge points-negative">−80</span></td>
+                    <td class="col-freq"><div class="input-cell">.......... ຄັ້ງ</div></td>
+                    <td class="col-total"><div class="input-cell">....................</div></td>
+                </tr>
+                <tr>
+                    <td>❌ ວິນິດໄສຜິດ / ສົ່ງຂໍ້ມູນວິທະຍາສາດໃຫ້ Pilot ຜິດ</td>
+                    <td class="col-points"><span class="points-badge points-negative">−150</span></td>
+                    <td class="col-freq"><div class="input-cell">.......... ຄັ້ງ</div></td>
+                    <td class="col-total"><div class="input-cell">....................</div></td>
+                </tr>
+                <tr class="total-row">
+                    <td colspan="3" style="text-align: right;">📕 (B) ລວມຄະແນນສີແດງທັງໝົດ</td>
+                    <td class="col-total"><div class="input-cell" style="border: 2px solid var(--penalty); background: white; font-weight: 700;">....................</div></td>
+                </tr>
+            </tbody>
+        </table>
+
+        <!-- Section 3: Final Evaluation -->
+        <div class="section-header section-summary">
+            <span>🏆</span>
+            <span>ສ່ວນທີ 3: ສະຫຼຸບຜົນການປະເມີນ (Final Evaluation)</span>
+        </div>
+
+        <div class="summary-box">
+            <div class="formula-display">
+                <span class="green-text">(A) ຄະແນນສີຂຽວລວມ</span> 
+                <span style="font-size: 20px; margin: 0 8px;">−</span> 
+                <span class="red-text">(B) ຄະແນນສີແດງລວມ</span> 
+                <span style="font-size: 20px; margin: 0 8px;">=</span> 
+                <strong>ຄະແນນສຸດທ້າຍ</strong>
+            </div>
+
+            <div class="final-score-box">
+                <span class="final-score-label">🎯 ຄະແນນສຸດທ້າຍ (Final Score)</span>
+                <input type="text" class="final-score-input" placeholder="0">
+                <span class="final-score-unit">ຄະແນນ</span>
+            </div>
+
+            <div style="font-weight: 700; font-size: 15px; color: var(--primary); margin-bottom: 12px; text-align: center;">
+                📌 ເກນການຕັດສິນລະດັບຄວາມເປັນຮີໂຣ່:
+            </div>
+
+            <div class="level-options">
+                <div class="level-option level-excellent">
+                    <span class="level-checkbox"></span>
+                    <div class="level-content">
+                        <div class="level-title">🟢 ລະດັບ "ທຸດຊຸມຊົນ" (ຄະແນນ 500 ຂຶ້ນໄປ)</div>
+                        <div class="level-desc">ຜ່ານພາລະກິດຢ່າງສົມບູນ, ຄວບຄຸມໂລກລະບາດໄດ້ດີເລີດ, ປະຊາກອນປອດໄພ.</div>
+                    </div>
+                </div>
+                <div class="level-option level-medium">
+                    <span class="level-checkbox"></span>
+                    <div class="level-content">
+                        <div class="level-title">🟡 ລະດັບ "ຜູ້ປ້ອງກັນ" (ຄະແນນ 250 – 499)</div>
+                        <div class="level-desc">ຜ່ານພາລະກິດ ແຕ່ຊຸມຊົນຍັງມີຄວາມສ່ຽງ, ຕ້ອງປັບປຸງການສື່ສານ.</div>
+                    </div>
+                </div>
+                <div class="level-option level-beginner">
+                    <span class="level-checkbox"></span>
+                    <div class="level-content">
+                        <div class="level-title">🔴 ລະດັບ "ມືໃໝ່" (ຄະແນນຕໍ່າກວ່າ 250 ຫຼື Oxygen ໝົດ)</div>
+                        <div class="level-desc">ບໍ່ຜ່ານພາລະກິດ, ເກີດການລະບາດຮ້າຍແຮງໃນຊຸມຊົນ.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Section 4: Feedback -->
+        <div class="section-header section-feedback">
+            <span>✍️</span>
+            <span>ສ່ວນທີ 4: ຄຳເຫັນເພີ່ມເຕີມຈາກ Coach (Qualitative Feedback)</span>
+        </div>
+
+        <div class="feedback-section">
+            <div class="feedback-item">
+                <div class="feedback-label">✨ ຈຸດດີຂອງການຮ່ວມມືພາຍໃນທີມໃນຮອບນີ້:</div>
+                <div class="feedback-lines">
+                    <div class="feedback-line"></div>
+                    <div class="feedback-line"></div>
+                    <div class="feedback-line"></div>
+                </div>
+            </div>
+            <div class="feedback-item">
+                <div class="feedback-label">⚠️ ບັນຫາ ຫຼື ອຸປະສັກທີ່ເກີດຂຶ້ນ (ເຊັ່ນ: Pilot ບໍ່ຟັງ Coach / Analyst ຫາຂໍ້ມູນຊ້າ):</div>
+                <div class="feedback-lines">
+                    <div class="feedback-line"></div>
+                    <div class="feedback-line"></div>
+                    <div class="feedback-line"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="form-footer">
+            <div>
+                📝 ແບບຟອມເກັບຄະແນນ THE COACH | ໂຄງການ SIMPLE
+            </div>
+            <div class="signature-area">
+                <span>ລາຍເຊັນ Coach:</span>
+                <span class="signature-line"></span>
+            </div>
+        </div>
+    </div>
+
+    <button class="print-btn" onclick="window.print()">🖨️ ພິມແບບຟອມນີ້</button>
+</body>
+</html>
